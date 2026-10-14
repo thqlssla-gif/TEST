@@ -1,0 +1,1517 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>리눅스 역량 진단</title>
+<meta name="description" content="정보보안 직무를 준비하는 비전공자를 위한 리눅스 역량 진단 — 하·중·상 난이도, 영역별 상세 피드백">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+/* layout: 검정 무대 위 리본 셰이더, 그 위에 유리 패널 — 소개 → 응시 → 진단 결과(+상담자 분석) */
+:root{
+  --bg:#0a0b09; --fg:#eef0ea; --fg2:#b7bcb0; --fg3:#7d8377;
+  --line:rgba(226,240,205,.09); --line2:rgba(226,240,205,.16);
+  --glass:rgba(17,19,15,.72); --glass2:rgba(26,29,23,.78);
+  --accent:#ffb648; --accent-ink:#1a1204; --accent-soft:rgba(255,182,72,.14);
+  --mint:#5be3c4; --mint-soft:rgba(91,227,196,.14);
+  --bad:#ff7a66; --bad-soft:rgba(255,122,102,.14);
+  --code-bg:rgba(6,7,5,.82); --c:#6f7569;
+  --sans:"Pretendard Variable","Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --ease:cubic-bezier(.16,1,.3,1);
+  --gut:clamp(20px,4vw,56px);
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --bg:#f4f5f0; --fg:#12140f; --fg2:#454a40; --fg3:#73796c;
+    --line:rgba(18,20,15,.09); --line2:rgba(18,20,15,.16);
+    --glass:rgba(250,251,247,.74); --glass2:rgba(255,255,255,.82);
+    --accent:#b9740f; --accent-ink:#fffaf0; --accent-soft:rgba(185,116,15,.12);
+    --mint:#0f8f74; --mint-soft:rgba(15,143,116,.12);
+    --bad:#c8452f; --bad-soft:rgba(200,69,47,.11);
+    --code-bg:rgba(236,238,230,.9); --c:#8a9081;
+    color-scheme:light;
+  }
+}
+:root[data-theme="light"]{
+  --bg:#f4f5f0; --fg:#12140f; --fg2:#454a40; --fg3:#73796c;
+  --line:rgba(18,20,15,.09); --line2:rgba(18,20,15,.16);
+  --glass:rgba(250,251,247,.74); --glass2:rgba(255,255,255,.82);
+  --accent:#b9740f; --accent-ink:#fffaf0; --accent-soft:rgba(185,116,15,.12);
+  --mint:#0f8f74; --mint-soft:rgba(15,143,116,.12);
+  --bad:#c8452f; --bad-soft:rgba(200,69,47,.11);
+  --code-bg:rgba(236,238,230,.9); --c:#8a9081;
+  color-scheme:light;
+}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{background:var(--bg);margin:0}
+body{color:var(--fg);font-family:var(--sans);font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden;word-break:keep-all}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:6px}
+.num{font-variant-numeric:tabular-nums}
+code{font-family:var(--mono);font-size:.88em;padding:.08em .4em;border-radius:5px;background:rgba(127,127,127,.12);color:var(--fg)}
+
+/* 배경 */
+#stage{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;transition:opacity 1.2s var(--ease)}
+#stage.fallback{background:radial-gradient(60% 70% at 78% 45%,rgba(255,182,72,.16),transparent 70%),radial-gradient(40% 50% at 92% 80%,rgba(91,227,196,.10),transparent 70%)}
+body.dim #stage{opacity:.36}
+body.is-exam #stage{opacity:.16}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]) #stage{filter:invert(1) hue-rotate(180deg);mix-blend-mode:multiply}}
+:root[data-theme="light"] #stage{filter:invert(1) hue-rotate(180deg);mix-blend-mode:multiply}
+.grain{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.06;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.wrap{position:relative;z-index:2;max-width:1440px;margin:0 auto;padding-inline:var(--gut)}
+
+/* 상단바 */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;transition:background .5s var(--ease),border-color .5s var(--ease)}
+.top.solid{background:var(--glass);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}
+.top .bar{display:flex;align-items:center;gap:14px;height:64px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:650;letter-spacing:-.02em;white-space:nowrap}
+.logo .mark{width:26px;height:26px;border-radius:7px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-family:var(--mono);font-size:12px;font-weight:600}
+.logo small{font-weight:450;color:var(--fg3);font-size:13px}
+.spacer{flex:1}
+.pill{display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 14px;border-radius:999px;border:1px solid var(--line2);background:var(--glass);font-size:13px;color:var(--fg2);white-space:nowrap}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent)}
+.dot.mint{background:var(--mint);box-shadow:0 0 10px var(--mint)}
+.icon-btn{width:36px;height:36px;border-radius:999px;border:1px solid var(--line2);background:var(--glass);display:grid;place-items:center;color:var(--fg2);transition:transform .4s var(--ease),color .3s}
+.icon-btn:hover{transform:translateY(-2px);color:var(--fg)}
+.icon-btn svg{width:17px;height:17px}
+
+/* 공통 */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:48px;padding:0 24px;border-radius:999px;border:1px solid var(--line2);background:var(--glass);font-weight:600;letter-spacing:-.01em;transition:transform .45s var(--ease),box-shadow .45s var(--ease),background .3s,border-color .3s;white-space:nowrap}
+.btn:hover{transform:translateY(-3px);border-color:var(--fg3)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+.btn.primary:hover{box-shadow:0 10px 30px -8px var(--accent)}
+.btn.sm{height:38px;padding:0 16px;font-size:14px}
+.btn:disabled{opacity:.4;pointer-events:none}
+.btn svg{width:16px;height:16px}
+.label{font-size:12px;color:var(--fg3);letter-spacing:.04em}
+.em{font-weight:250;color:var(--accent)}
+.glass{background:var(--glass);border:1px solid var(--line2);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-radius:20px}
+.screen{display:none}
+.screen.on{display:block}
+
+/* ── 소개 ── */
+.hero{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:clamp(28px,4vw,64px);align-items:center;padding-block:clamp(40px,7vw,96px) clamp(36px,5vw,64px)}
+.hero-l{min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:22px}
+.h1{font-size:clamp(36px,5.4vw,72px);font-weight:650;letter-spacing:-.05em;line-height:1.1;margin:0;text-wrap:balance}
+.h1 .ln{display:block;overflow:hidden;padding-bottom:.04em}
+.h1 .ln>span{display:inline-block;transform:translateY(105%);animation:rise 1.1s var(--ease) forwards}
+.h1 .ln:nth-child(2)>span{animation-delay:.12s}
+.h1 .ln:nth-child(3)>span{animation-delay:.24s}
+@keyframes rise{to{transform:none}}
+.lead{font-size:clamp(15px,1.3vw,17px);color:var(--fg2);max-width:34em;margin:0}
+.levelseg{display:inline-flex;padding:4px;border-radius:999px;border:1px solid var(--line2);background:var(--glass);gap:2px}
+.levelseg button{height:38px;padding:0 18px;border-radius:999px;border:0;background:none;font-size:14px;color:var(--fg3);transition:all .35s var(--ease);display:inline-flex;align-items:center;gap:8px}
+.levelseg button b{font-weight:650;color:var(--fg2);transition:color .35s}
+.levelseg button.on{background:var(--accent);color:var(--accent-ink)}
+.levelseg button.on b{color:var(--accent-ink)}
+.lvdesc{font-size:13px;color:var(--fg3);margin:-10px 0 0;min-height:1.4em}
+.start{display:flex;flex-wrap:wrap;gap:10px;align-items:stretch;width:100%;max-width:620px}
+.field{flex:1 1 200px;min-width:0;display:flex;align-items:center;height:48px;border-radius:999px;border:1px solid var(--line2);background:var(--glass);padding:0 6px 0 20px;transition:border-color .3s}
+.field.short4{flex:0 0 150px;padding-right:16px}
+.field:focus-within{border-color:var(--accent)}
+.field label{font-size:12px;color:var(--fg3);margin-right:10px;white-space:nowrap}
+.field input{flex:1;min-width:0;background:none;border:0;outline:none;height:100%;font-size:15px}
+.field input::placeholder{color:var(--fg3)}
+.hint{font-size:12.5px;color:var(--fg3);margin:-8px 0 0;min-height:1.2em}
+.hint.err{color:var(--bad)}
+.fade{opacity:0;transform:translateY(16px);animation:fadeup 1s var(--ease) forwards}
+@keyframes fadeup{to{opacity:1;transform:none}}
+
+/* 소개 카드 */
+.track{min-width:0;padding:0;overflow:hidden}
+.track-head{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line)}
+.lights{display:flex;gap:6px}.lights i{width:9px;height:9px;border-radius:50%;background:var(--line2)}
+.track-head .path{font-family:var(--mono);font-size:12px;color:var(--fg3);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.track-head .path b{color:var(--fg2);font-weight:500}
+.track-body{padding:20px 18px 18px;display:flex;flex-direction:column;gap:16px}
+.map-row{display:flex;flex-direction:column;gap:9px}
+.map-row .rl{display:flex;justify-content:space-between;font-size:12px;color:var(--fg3)}
+.map-row .rl b{color:var(--fg2);font-weight:600}
+.cells{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.cell{min-height:70px;border-radius:10px;border:1px solid var(--line2);background:rgba(127,127,127,.04);display:flex;flex-direction:column;justify-content:space-between;gap:6px;padding:8px 10px;font-family:var(--mono);font-size:11px;color:var(--fg3);position:relative;transition:background .7s var(--ease),border-color .7s var(--ease),color .7s,box-shadow .7s}
+.cell .d{font-weight:600;display:flex;justify-content:space-between}
+.cell .t{font-family:var(--sans);font-size:12px;line-height:1.3;color:var(--fg2)}
+.cell .bar{height:3px;border-radius:2px;background:var(--line2);overflow:hidden}
+.cell .bar i{display:block;height:100%;width:0;background:currentColor;transition:width .9s var(--ease)}
+.cell.lit{border-color:var(--accent);color:var(--accent);background:var(--accent-soft);box-shadow:0 0 18px -6px var(--accent)}
+.cell.lit .bar i{width:100%}
+.flowline{height:22px;width:100%;display:block}
+.flowline path{fill:none;stroke:var(--accent);stroke-width:1.2;stroke-dasharray:3 6;animation:dash 1.6s linear infinite;opacity:.7}
+@keyframes dash{to{stroke-dashoffset:-18}}
+.term{border-radius:12px;background:var(--code-bg);border:1px solid var(--line);padding:12px 14px;font-family:var(--mono);font-size:12.5px;line-height:1.75;min-height:132px;color:var(--fg2);overflow:hidden;white-space:pre-wrap;word-break:break-all}
+.term .p{color:var(--accent)}
+.term .o{color:var(--fg3)}
+.term .w{color:var(--mint)}
+.caret{display:inline-block;width:7px;height:14px;background:var(--accent);vertical-align:-2px;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+
+/* 핵심 정보 띠 */
+.band{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px solid var(--line2);border-bottom:1px solid var(--line2);margin-bottom:clamp(56px,8vw,110px)}
+.band>div{padding:22px 22px 22px 0;display:flex;flex-direction:column;gap:6px;min-width:0}
+.band>div+div{padding-left:22px;border-left:1px solid var(--line)}
+.band b{font-size:clamp(20px,2.2vw,28px);font-weight:650;letter-spacing:-.03em}
+.band b small{font-size:.55em;font-weight:500;color:var(--fg3);margin-left:3px}
+
+/* 섹션 머리 */
+.sec{padding-bottom:clamp(64px,9vw,120px)}
+.sec-head{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.7fr);gap:24px;align-items:end;margin-bottom:34px}
+.eyebrow{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.eyebrow::before{content:"";width:22px;height:1px;background:var(--accent)}
+.h2{font-size:clamp(28px,3.4vw,46px);font-weight:650;letter-spacing:-.045em;line-height:1.12;margin:0;text-wrap:balance}
+.sec-head p{color:var(--fg2);margin:0;max-width:30em}
+.reveal{opacity:.25;filter:blur(4px);transform:translateY(26px);transition:opacity 1.1s var(--ease),filter 1.1s var(--ease),transform 1.1s var(--ease)}
+.reveal.in{opacity:1;filter:none;transform:none}
+
+/* 진단 영역 표 */
+.scope{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.scope .glass{padding:22px 22px 10px}
+.scope h3{margin:0 0 4px;font-size:19px;letter-spacing:-.03em;font-weight:650;display:flex;align-items:baseline;gap:10px}
+.scope h3 span{font-size:12px;color:var(--fg3);font-weight:500}
+.srow{display:grid;grid-template-columns:56px minmax(0,1fr) auto;gap:12px;padding:11px 0;border-top:1px solid var(--line);align-items:baseline;font-size:14px}
+.srow:first-of-type{border-top:0}
+.srow .dy{font-family:var(--mono);font-size:12px;color:var(--fg3)}
+.srow .q{font-size:12px;color:var(--fg3)}
+
+/* 난이도 카드 */
+.lvcards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.lvc{padding:24px;text-align:left;display:flex;flex-direction:column;gap:10px;transition:transform .5s var(--ease),border-color .4s,box-shadow .5s var(--ease)}
+.lvc:hover{transform:translateY(-4px);border-color:var(--fg3)}
+.lvc.on{border-color:var(--accent);box-shadow:0 18px 40px -26px var(--accent)}
+.lvc .top2{display:flex;justify-content:space-between;align-items:center}
+.lvc .big{font-size:44px;font-weight:650;letter-spacing:-.05em;line-height:1}
+.lvc .lv{display:inline-flex;gap:3px}
+.lvc .lv i{width:7px;height:7px;border-radius:2px;background:var(--line2)}
+.lvc .lv i.on{background:var(--accent)}
+.lvc h4{margin:0;font-size:17px;font-weight:650;letter-spacing:-.02em}
+.lvc p{margin:0;color:var(--fg2);font-size:14px}
+.lvc .ex{font-family:var(--mono);font-size:12px;color:var(--fg3);border-top:1px solid var(--line);padding-top:10px;margin-top:auto}
+
+.steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-top:18px}
+.step{padding:22px;border-top:1px solid var(--line2)}
+.step .n{font-family:var(--mono);font-size:12px;color:var(--accent)}
+.step h4{margin:8px 0 6px;font-size:17px;font-weight:650;letter-spacing:-.02em}
+.step p{margin:0;color:var(--fg2);font-size:14px}
+
+.closing{border-radius:28px;background:var(--accent);color:var(--accent-ink);padding:clamp(28px,5vw,64px);display:grid;grid-template-columns:minmax(0,1fr) auto;gap:24px;align-items:end;margin-bottom:clamp(56px,8vw,96px)}
+.closing .big{font-size:clamp(56px,10vw,150px);font-weight:650;letter-spacing:-.06em;line-height:.92}
+.closing p{margin:12px 0 0;font-size:16px;opacity:.82;max-width:28em}
+.closing .btn{background:var(--accent-ink);color:var(--accent);border-color:transparent}
+
+/* ── 응시 ── */
+.exam{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:22px;padding-block:28px 120px;align-items:start}
+.progress{height:3px;background:var(--line);border-radius:3px;overflow:hidden;margin-bottom:18px}
+.progress i{display:block;height:100%;width:0;background:var(--accent);transition:width .8s var(--ease)}
+.qcard{padding:clamp(20px,3vw,36px);min-width:0}
+.qmeta{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-bottom:18px}
+.qno{font-family:var(--mono);font-size:13px;color:var(--accent);font-weight:600}
+.tag{font-size:12px;color:var(--fg3);padding:3px 10px;border-radius:999px;border:1px solid var(--line2)}
+.lvdots{display:inline-flex;gap:3px;align-items:center;font-size:12px;color:var(--fg3)}
+.lvdots i{width:6px;height:6px;border-radius:2px;background:var(--line2)}
+.lvdots i.on{background:var(--accent)}
+.qtext{font-size:clamp(18px,1.8vw,22px);font-weight:600;letter-spacing:-.03em;line-height:1.45;margin:0 0 18px;text-wrap:pretty}
+.code{background:var(--code-bg);border:1px solid var(--line);border-radius:14px;padding:16px 18px;font-family:var(--mono);font-size:13.5px;line-height:1.7;overflow-x:auto;margin:0 0 20px;white-space:pre-wrap;word-break:break-all;color:var(--fg)}
+.code .p{color:var(--accent)}
+.code .c{color:var(--c);font-style:italic}
+.code .h{color:var(--fg3)}
+.opts{display:grid;gap:10px}
+.opt{display:grid;grid-template-columns:30px minmax(0,1fr);gap:12px;align-items:start;text-align:left;padding:13px 16px;border-radius:14px;border:1px solid var(--line2);background:rgba(127,127,127,.03);transition:transform .4s var(--ease),border-color .3s,background .3s,box-shadow .4s var(--ease)}
+.opt:hover{transform:translateY(-2px);border-color:var(--fg3)}
+.opt .key{width:28px;height:28px;border-radius:8px;border:1px solid var(--line2);display:grid;place-items:center;font-family:var(--mono);font-size:12px;color:var(--fg3);transition:all .3s}
+.opt .txt{padding-top:3px;min-width:0;overflow-wrap:anywhere}
+.opt.sel{border-color:var(--accent);background:var(--accent-soft);box-shadow:0 8px 26px -14px var(--accent)}
+.opt.sel .key{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+.qfoot{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:26px;padding-top:20px;border-top:1px solid var(--line)}
+.unk{height:38px;padding:0 14px;border-radius:999px;border:1px dashed var(--line2);background:none;font-size:13.5px;color:var(--fg3);transition:all .3s}
+.unk:hover{color:var(--fg2);border-color:var(--fg3)}
+.unk.on{border-style:solid;color:var(--fg);border-color:var(--fg2);background:rgba(127,127,127,.08)}
+.kbd{font-size:12px;color:var(--fg3)}
+.qwrap{animation:qin .6s var(--ease)}
+@keyframes qin{from{opacity:.25;transform:translateY(14px);filter:blur(3px)}to{opacity:1;transform:none;filter:none}}
+.side{position:sticky;top:calc(env(safe-area-inset-top,0px) + 84px);padding:20px;display:flex;flex-direction:column;gap:16px}
+.side h5{margin:0;font-size:13px;font-weight:600;color:var(--fg2);display:flex;justify-content:space-between}
+.side h5 span{color:var(--fg3);font-weight:500}
+.navgrid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}
+.nav{height:34px;border-radius:9px;border:1px solid var(--line2);background:none;font-family:var(--mono);font-size:12px;color:var(--fg3);transition:all .3s;padding:0}
+.nav.done{background:var(--accent-soft);color:var(--accent);border-color:transparent}
+.nav.unk{background:rgba(127,127,127,.1);color:var(--fg2);border-color:transparent}
+.nav.cur{border-color:var(--accent);color:var(--fg)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--fg3)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:9px;height:9px;border-radius:3px;display:inline-block}
+.confirm{border-top:1px solid var(--line);padding-top:14px;display:flex;flex-direction:column;gap:10px;font-size:13.5px;color:var(--fg2)}
+.confirm .row{display:flex;gap:8px}
+.confirm .row .btn{flex:1}
+
+/* ── 결과 ── */
+.res-hero{display:grid;grid-template-columns:auto minmax(0,1fr);gap:clamp(24px,4vw,60px);align-items:center;padding-block:clamp(36px,6vw,80px) 36px}
+.ring{width:clamp(180px,22vw,240px);aspect-ratio:1;position:relative;max-width:100%}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring circle{fill:none;stroke-width:7}
+.ring .bg{stroke:var(--line2)}
+.ring .fg{stroke:var(--accent);stroke-linecap:round;transition:stroke-dashoffset 1.8s var(--ease)}
+.ring .center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring .score{font-size:clamp(52px,6vw,72px);font-weight:650;letter-spacing:-.06em;line-height:1}
+.ring .score small{font-size:.32em;font-weight:500;color:var(--fg3);letter-spacing:0;margin-left:2px}
+.verdict{display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 14px;border-radius:999px;font-size:13.5px;font-weight:600}
+.verdict.good{background:var(--mint-soft);color:var(--mint)}
+.verdict.mid{background:var(--accent-soft);color:var(--accent)}
+.verdict.low{background:var(--bad-soft);color:var(--bad)}
+.res-hero h1{font-size:clamp(30px,3.8vw,52px);font-weight:650;letter-spacing:-.05em;line-height:1.12;margin:14px 0 12px;text-wrap:balance}
+.res-hero p{color:var(--fg2);margin:0;max-width:36em}
+.res-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+.stage-track{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;margin:18px 0 0;max-width:520px}
+.stage-track div{display:flex;flex-direction:column;gap:6px;font-size:11.5px;color:var(--fg3)}
+.stage-track i{height:4px;border-radius:4px;background:var(--line2);display:block;transition:background .8s var(--ease)}
+.stage-track div.on i{background:var(--accent)}
+.stage-track div.cur{color:var(--fg)}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px solid var(--line2);border-bottom:1px solid var(--line2);margin-bottom:56px}
+.stats>div{padding:18px 18px 18px 0;display:flex;flex-direction:column;gap:4px;min-width:0}
+.stats>div+div{padding-left:18px;border-left:1px solid var(--line)}
+.stats b{font-size:26px;font-weight:650;letter-spacing:-.03em}
+.stats b small{font-size:.55em;color:var(--fg3);font-weight:500;margin-left:2px}
+.g{color:var(--mint)}.m{color:var(--accent)}.b{color:var(--bad)}
+.bg-g{background:var(--mint)}.bg-m{background:var(--accent)}.bg-b{background:var(--bad)}
+
+.res-map{padding:22px;margin-bottom:18px}
+.cell.st-g{border-color:var(--mint);color:var(--mint);background:var(--mint-soft)}
+.cell.st-m{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+.cell.st-b{border-color:var(--bad);color:var(--bad);background:var(--bad-soft)}
+.cell.st-g .bar i,.cell.st-m .bar i,.cell.st-b .bar i{width:var(--w)}
+.duo{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:18px;margin-bottom:56px}
+.duo .glass{padding:22px;min-width:0}
+.duo h3,.rec h3{margin:0 0 10px;font-size:18px;font-weight:650;letter-spacing:-.03em}
+.radar{width:100%;height:auto;display:block}
+.radar text{font-family:var(--sans);font-size:11.5px;fill:var(--fg2)}
+.radar .grid{fill:none;stroke:var(--line2)}
+.radar .ax{stroke:var(--line)}
+.radar .area{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.8;stroke-linejoin:round}
+.radar .pt{fill:var(--accent)}
+.units{display:flex;flex-direction:column}
+.unit{display:grid;grid-template-columns:minmax(0,1fr) 110px 44px;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line);font-size:14px}
+.unit:first-child{border-top:0}
+.unit .nm{min-width:0}
+.unit .nm small{display:block;font-size:11.5px;color:var(--fg3);font-family:var(--mono)}
+.unit .mini{height:4px;border-radius:4px;background:var(--line);overflow:hidden}
+.unit .mini i{display:block;height:100%;width:0;transition:width 1.2s var(--ease)}
+.unit .sc{text-align:right;font-size:13px;color:var(--fg2)}
+
+.rec{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:18px;margin-bottom:18px}
+.rec .glass{padding:22px}
+.rec ol{margin:0;padding:0;list-style:none;display:flex;flex-direction:column}
+.rec li{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:baseline;padding:11px 0;border-top:1px solid var(--line);font-size:14px}
+.rec li .dy{font-family:var(--mono);font-size:12px;color:var(--fg3);white-space:nowrap}
+.rec .note{color:var(--fg2);font-size:14.5px;margin:0;white-space:pre-line}
+.empty{color:var(--fg3);font-size:14px;padding:10px 0;border-top:1px solid var(--line)}
+
+.fbgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-bottom:56px}
+.fb{padding:22px;display:flex;flex-direction:column;gap:10px}
+.fb .h{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.fb .h h3{margin:0;font-size:18px;font-weight:650;letter-spacing:-.03em}
+.fb .h span{font-size:12px;font-family:var(--mono);color:var(--fg3)}
+.fb p{margin:0;color:var(--fg2);font-size:14.5px}
+.fb ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column}
+.fb li{padding:9px 0 9px 22px;border-top:1px solid var(--line);font-size:14px;color:var(--fg2);position:relative}
+.fb li::before{content:"";position:absolute;left:2px;top:17px;width:8px;height:1px;background:var(--accent)}
+.fb .miss{font-size:12.5px;color:var(--fg3);font-family:var(--mono)}
+
+.share{padding:24px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:end;margin-bottom:56px}
+.share h3{margin:0 0 6px;font-size:20px;font-weight:650;letter-spacing:-.03em}
+.share p{margin:0;color:var(--fg2);font-size:14.5px}
+.linkbox{display:flex;gap:8px;margin-top:14px}
+.linkbox input{flex:1;min-width:0;height:42px;border-radius:999px;border:1px solid var(--line2);background:rgba(127,127,127,.05);padding:0 16px;font-family:var(--mono);font-size:12px;color:var(--fg3)}
+
+.review-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+.seg{display:inline-flex;padding:4px;border-radius:999px;border:1px solid var(--line2);background:var(--glass)}
+.seg button{height:32px;padding:0 14px;border-radius:999px;border:0;background:none;font-size:13px;color:var(--fg3);transition:all .35s var(--ease)}
+.seg button.on{background:var(--accent);color:var(--accent-ink)}
+.rv{display:flex;flex-direction:column;gap:12px;margin-bottom:80px}
+.rvi{padding:20px 22px}
+.rvi-top{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-bottom:10px}
+.mk{font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px}
+.mk.ok{background:var(--mint-soft);color:var(--mint)}
+.mk.no{background:var(--bad-soft);color:var(--bad)}
+.mk.uk{background:rgba(127,127,127,.12);color:var(--fg2)}
+.rvi h4{margin:0 0 12px;font-size:16px;font-weight:600;letter-spacing:-.02em;line-height:1.5}
+.rvi .code{font-size:12.5px;padding:12px 14px;margin-bottom:12px}
+.ans{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:12px}
+.ans>div{padding:10px 12px;border-radius:10px;border:1px solid var(--line);font-size:13.5px;min-width:0}
+.ans>div span{display:block;font-size:11.5px;color:var(--fg3);margin-bottom:2px}
+.exp{margin:0;color:var(--fg2);font-size:14px}
+
+/* 상담자 */
+.staff{padding:24px;margin-bottom:18px}
+.staff ul{margin:0;padding:0;list-style:none}
+.staff li{padding:11px 0 11px 22px;border-top:1px solid var(--line);font-size:14.5px;color:var(--fg2);position:relative}
+.staff li:first-child{border-top:0}
+.staff li::before{content:"";position:absolute;left:2px;top:20px;width:8px;height:1px;background:var(--accent)}
+.staff li b{color:var(--fg);font-weight:600}
+.qtable{width:100%;border-collapse:collapse;font-size:13.5px}
+.qtable th{text-align:left;font-weight:500;font-size:12px;color:var(--fg3);padding:8px 8px;border-bottom:1px solid var(--line2)}
+.qtable td{padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:top;color:var(--fg2)}
+.qtable td.m{font-family:var(--mono);font-size:12.5px;white-space:nowrap}
+.qtable .fast{color:var(--accent);font-size:11.5px;margin-left:6px}
+.warn{padding:14px 18px;border-radius:14px;border:1px solid var(--bad);background:var(--bad-soft);color:var(--bad);font-size:14px;margin-top:20px}
+
+/* 상담자 화면 */
+.paste{padding:clamp(22px,3vw,34px);margin-block:clamp(36px,6vw,80px) 80px;max-width:820px}
+.paste textarea{width:100%;min-height:120px;border-radius:14px;border:1px solid var(--line2);background:var(--code-bg);padding:14px 16px;font-family:var(--mono);font-size:12.5px;color:var(--fg2);resize:vertical;outline:none;margin:18px 0 12px}
+.paste textarea:focus{border-color:var(--accent)}
+
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);opacity:0;z-index:50;padding:12px 18px;border-radius:999px;background:var(--fg);color:var(--bg);font-size:14px;font-weight:600;transition:all .5s var(--ease);pointer-events:none}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+
+/* 하단 고정바 */
+.dock{position:fixed;left:0;right:0;bottom:0;z-index:15;transform:translateY(110%);transition:transform .7s var(--ease);padding-bottom:env(safe-area-inset-bottom,0px);background:var(--glass);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-top:1px solid var(--line)}
+.dock:not(.on){visibility:hidden;transition:transform .7s var(--ease),visibility 0s .7s}
+.dock.on{transform:none}
+.dock .wrap{display:flex;align-items:center;gap:14px;height:64px}
+.dock .t{font-weight:600;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.dock .t small{color:var(--fg3);font-weight:450;margin-left:8px}
+.foot{position:relative;z-index:2;color:var(--fg3);font-size:12px;padding:0 var(--gut) 40px;max-width:1440px;margin:0 auto}
+
+@media (max-width:1020px){
+  .hero{grid-template-columns:minmax(0,1fr)}
+  .exam{grid-template-columns:minmax(0,1fr)}
+  .side{position:static}
+  .navgrid{grid-template-columns:repeat(12,minmax(0,1fr))}
+  .rec,.duo{grid-template-columns:minmax(0,1fr)}
+  .lvcards{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:760px){
+  .band,.stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .band>div:nth-child(3),.stats>div:nth-child(3){padding-left:0;border-left:0}
+  .band>div:nth-child(n+3),.stats>div:nth-child(n+3){border-top:1px solid var(--line)}
+  .sec-head{grid-template-columns:minmax(0,1fr)}
+  .scope,.steps,.fbgrid{grid-template-columns:minmax(0,1fr)}
+  .closing,.share{grid-template-columns:minmax(0,1fr)}
+  .res-hero{grid-template-columns:minmax(0,1fr);justify-items:start}
+  .hide-s{display:none!important}
+  .cells{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .ans{grid-template-columns:minmax(0,1fr)}
+  .navgrid{grid-template-columns:repeat(6,minmax(0,1fr))}
+  .unit{grid-template-columns:minmax(0,1fr) 64px 40px}
+  .levelseg button{padding:0 12px}
+  .field.short4{flex:1 1 140px}
+  .qtable .hide-s{display:none}
+}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  .h1 .ln>span{transform:none}
+  .fade{opacity:1;transform:none}
+  .reveal{opacity:1;filter:none;transform:none}
+}
+@media print{
+  :root{--bg:#fff;--fg:#111;--fg2:#333;--fg3:#666;--line:#ddd;--line2:#ccc;--glass:#fff;--code-bg:#f4f4f1;--accent:#9a5b00;--accent-soft:#f6ecdc;--mint:#0f7a63;--mint-soft:#e2f2ec;--bad:#b23b2a;--bad-soft:#f7e3df;color-scheme:light}
+  #stage,.grain,.top,.dock,.toast,.res-actions,.share,.seg,.noprint{display:none!important}
+  .glass{backdrop-filter:none;-webkit-backdrop-filter:none}
+  .reveal{opacity:1;filter:none;transform:none}
+  .rvi,.fb,.staff,.duo .glass{break-inside:avoid}
+  .rvi{display:block!important}
+}
+</style>
+</head>
+<body>
+<canvas id="stage" aria-hidden="true"></canvas>
+<div class="grain" aria-hidden="true"></div>
+
+<header class="top" id="top">
+  <div class="wrap bar">
+    <div class="logo"><span class="mark">$_</span>코리아AI아카데미 <small class="hide-s">부산</small></div>
+    <div class="spacer"></div>
+    <span class="pill hide-s" id="statusPill"><span class="dot"></span>리눅스 역량 진단 · 정보보안</span>
+    <span class="pill num" id="timerPill" hidden><span class="dot"></span><span id="timerTxt">00:00</span></span>
+    <span class="pill" id="staffPill" hidden><span class="dot mint"></span>상담자 보기</span>
+    <button class="icon-btn" id="themeBtn" type="button" aria-label="화면 테마 바꾸기">
+      <svg id="icoSun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"/></svg>
+      <svg id="icoMoon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" hidden><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7Z"/></svg>
+    </button>
+  </div>
+</header>
+
+<!-- ───────── 소개 ───────── -->
+<main id="sIntro" class="screen on">
+  <div class="wrap">
+    <section class="hero">
+      <div class="hero-l">
+        <span class="pill fade" style="animation-delay:.05s"><span class="dot mint"></span>정보보안 직무 준비 · 리눅스 가이드 기준</span>
+        <h1 class="h1">
+          <span class="ln"><span>보안 직무에 필요한</span></span>
+          <span class="ln"><span>리눅스 실력을</span></span>
+          <span class="ln"><span><span class="em">진단</span>합니다</span></span>
+        </h1>
+        <p class="lead fade" style="animation-delay:.45s">8개 영역에서 24문항을 풉니다. 끝나면 영역별 이해도, 가이드 몇 장부터 다시 보면 되는지, 문항별 해설까지 바로 보여 드립니다.</p>
+        <div class="levelseg fade" id="levelSeg" role="tablist" aria-label="난이도" style="animation-delay:.55s">
+          <button type="button" data-lv="1" class="on"><b>하</b>처음 시작</button>
+          <button type="button" data-lv="2"><b>중</b>실습 확인</button>
+          <button type="button" data-lv="3"><b>상</b>실무 판단</button>
+        </div>
+        <p class="lvdesc fade" id="lvDesc" style="animation-delay:.6s"></p>
+        <form class="start fade" id="startForm" style="animation-delay:.65s" autocomplete="off">
+          <div class="field"><label for="nameIn">이름</label><input id="nameIn" maxlength="20" placeholder="응시자 이름"></div>
+          <div class="field short4"><label for="tailIn">뒤 4자리</label><input id="tailIn" maxlength="4" inputmode="numeric" placeholder="선택"></div>
+          <button class="btn primary" type="submit">진단 시작
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+        </form>
+        <p class="hint" id="nameHint" aria-live="polite">연락처 뒤 4자리는 동명이인 구분용이며 입력하지 않아도 됩니다.</p>
+        <button class="btn sm fade" type="button" id="resumeBtn" hidden style="animation-delay:.7s">이어서 풀기</button>
+      </div>
+
+      <div class="glass track fade" style="animation-delay:.8s" aria-label="진단 영역 미리보기">
+        <div class="track-head">
+          <span class="lights"><i></i><i></i><i></i></span>
+          <span class="path">security-lab / <b>linux-skill-check</b></span>
+          <span class="pill" style="height:26px;font-size:12px"><span class="dot mint"></span>응시 가능</span>
+        </div>
+        <div class="track-body">
+          <div class="map-row">
+            <div class="rl"><b>기본기</b><span>터미널 · 파일 · 검색 · 권한</span></div>
+            <div class="cells" id="introA"></div>
+          </div>
+          <svg class="flowline" viewBox="0 0 400 22" preserveAspectRatio="none" aria-hidden="true"><path d="M380 2 C 380 16, 20 6, 20 20"/></svg>
+          <div class="map-row">
+            <div class="rl"><b>보안 실무</b><span>서비스 · 네트워크 · 로그 · 설정</span></div>
+            <div class="cells" id="introB"></div>
+          </div>
+          <div class="term" id="term" aria-hidden="true"></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="band reveal">
+      <div><span class="label">문항 수</span><b class="num">24<small>문항</small></b></div>
+      <div><span class="label">진단 영역</span><b class="num">8<small>개 영역</small></b></div>
+      <div><span class="label">난이도</span><b>하 · 중 · 상<small>선택</small></b></div>
+      <div><span class="label">결과</span><b>즉시<small>링크로 공유</small></b></div>
+    </div>
+
+    <section class="sec">
+      <div class="sec-head reveal">
+        <div>
+          <div class="eyebrow"><span class="label">진단 영역</span></div>
+          <h2 class="h2">가이드 장마다, <span class="em">영역별</span>로 출제합니다</h2>
+        </div>
+        <p>「정보보안을 위한 리눅스 첫걸음」 가이드의 03~13장을 8개 영역으로 묶었습니다. 난이도마다 영역별 3문항씩입니다.</p>
+      </div>
+      <div class="scope">
+        <div class="glass reveal"><h3>기본기 <span>터미널부터 권한까지 · 12문항</span></h3><div id="scopeA"></div></div>
+        <div class="glass reveal"><h3>보안 실무 <span>서비스부터 보안 설정까지 · 12문항</span></h3><div id="scopeB"></div></div>
+      </div>
+    </section>
+
+    <section class="sec">
+      <div class="sec-head reveal">
+        <div>
+          <div class="eyebrow"><span class="label">난이도</span></div>
+          <h2 class="h2">지금 수준에 맞는 <span class="em">난이도</span>를 고르세요</h2>
+        </div>
+        <p>처음이라면 하부터 시작하세요. 80점을 넘으면 결과 화면에서 다음 난이도를 안내합니다.</p>
+      </div>
+      <div class="lvcards" id="lvCards"></div>
+    </section>
+
+    <section class="sec">
+      <div class="sec-head reveal">
+        <div>
+          <div class="eyebrow"><span class="label">응시 방법</span></div>
+          <h2 class="h2">찍지 말고 <span class="em">모르겠어요</span>를 누르세요</h2>
+        </div>
+        <p>추측으로 맞힌 문제는 진단을 흐립니다. 모르는 문제를 따로 표시해 두면 어디부터 공부할지 더 정확하게 나옵니다.</p>
+      </div>
+      <div class="steps">
+        <div class="step reveal"><span class="n">01</span><h4>난이도·이름 입력 후 시작</h4><p>시간 제한은 없습니다. 중간에 창을 닫아도 같은 기기에서 이어서 풀 수 있습니다.</p></div>
+        <div class="step reveal"><span class="n">02</span><h4>24문항 객관식</h4><p>키보드 1~4로 보기를, 0으로 모르겠어요를, ← →로 문항을 넘길 수 있습니다.</p></div>
+        <div class="step reveal"><span class="n">03</span><h4>결과 링크를 선생님께</h4><p>영역별 진단과 해설이 나옵니다. 결과 링크를 복사해 상담 선생님께 보내면 같은 결과지를 볼 수 있습니다.</p></div>
+      </div>
+    </section>
+
+    <section class="closing reveal">
+      <div>
+        <div class="big num">24<span style="font-weight:250">/8</span></div>
+        <p>24문항, 8개 영역. 보안 직무에 필요한 리눅스 기본기가 어디까지 왔는지 지금 확인하세요.</p>
+      </div>
+      <button class="btn" type="button" id="closingStart">진단 시작하기</button>
+    </section>
+  </div>
+</main>
+
+<!-- ───────── 응시 ───────── -->
+<main id="sExam" class="screen">
+  <div class="wrap exam">
+    <div style="min-width:0">
+      <div class="progress"><i id="prog"></i></div>
+      <article class="glass qcard" id="qcard" aria-live="polite"></article>
+    </div>
+    <aside class="glass side">
+      <h5>문항 이동 <span class="num" id="answeredCnt">0 / 24</span></h5>
+      <div class="navgrid" id="navgrid"></div>
+      <div class="legend">
+        <span><i style="background:var(--accent-soft);outline:1px solid var(--accent)"></i>답함</span>
+        <span><i style="background:rgba(127,127,127,.25)"></i>모르겠어요</span>
+        <span><i style="border:1px solid var(--line2)"></i>안 푼 문항</span>
+      </div>
+      <div class="confirm" id="confirmBox"></div>
+    </aside>
+  </div>
+</main>
+
+<!-- ───────── 결과 ───────── -->
+<main id="sResult" class="screen">
+  <div class="wrap" id="resWrap"></div>
+</main>
+
+<!-- ───────── 상담자: 결과 열기 ───────── -->
+<main id="sAdmin" class="screen">
+  <div class="wrap">
+    <section class="glass paste">
+      <div class="eyebrow"><span class="label">상담자용</span></div>
+      <h2 class="h2" style="font-size:clamp(26px,3vw,38px)">학생에게 받은 <span class="em">결과 링크</span>를 붙여넣으세요</h2>
+      <p style="color:var(--fg2);margin:12px 0 0">상담 분석(찍기 의심 문항, 직무별 보강 영역, 재측정 권장 난이도, 문항별 소요 시간)까지 포함된 결과지를 엽니다.</p>
+      <textarea id="adminIn" placeholder="https://.../#r=... 또는 결과 코드"></textarea>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn primary sm" type="button" id="adminOpen">결과 열기</button>
+        <button class="btn sm" type="button" id="adminHome">진단 첫 화면</button>
+      </div>
+      <p class="hint err" id="adminErr" style="margin-top:12px"></p>
+    </section>
+  </div>
+</main>
+
+<div class="dock" id="dock">
+  <div class="wrap">
+    <div class="t">리눅스 역량 진단<small class="num">24문항 · 8개 영역</small></div>
+    <div class="spacer"></div>
+    <button class="btn primary sm" type="button" id="dockStart">진단 시작</button>
+  </div>
+</div>
+<div class="foot" id="foot">결과는 이 기기와 결과 링크 안에만 담기며 별도 서버에 저장되지 않습니다<span id="footHook"></span>.</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+/* =========================================================
+   설정 — 필요할 때만 바꾸세요 (README 참고)
+   ========================================================= */
+const CONFIG = {
+  // 구글 시트로 결과를 자동 수집하려면 Apps Script 웹앱 URL을 넣으세요. 비워 두면 링크 공유 방식만 사용합니다.
+  WEBHOOK_URL: "",
+  // 결과 링크 위변조 확인용 문자열. 바꾸면 이전에 만든 결과 링크는 '변조 의심'으로 표시됩니다.
+  SALT: "linux-check-2026"
+};
+</script>
+<script>
+/* =========================================================
+   문항 은행 — 리눅스 역량 진단
+   lv: 1=하, 2=중, 3=상 / d: 영역 번호(1~8) / a: 정답 보기 번호(0부터)
+   보기 순서는 응시할 때 섞여서 나옵니다. 정답은 항상 원래 순서 기준.
+   ========================================================= */
+const DOMAINS = [
+  { id: 1, name: "터미널·디렉터리", ch: "03–04장" },
+  { id: 2, name: "파일 다루기", ch: "05장" },
+  { id: 3, name: "검색·파이프", ch: "06장" },
+  { id: 4, name: "사용자·권한", ch: "07장" },
+  { id: 5, name: "프로세스·서비스·패키지", ch: "08–09장" },
+  { id: 6, name: "네트워크·SSH", ch: "10장" },
+  { id: 7, name: "로그 분석", ch: "11장" },
+  { id: 8, name: "보안 설정·스크립트", ch: "12–13장" }
+];
+
+const BANK = [
+/* ===================== 하 (lv1) ===================== */
+{ id:"1-1-1", lv:1, d:1,
+  q:"지금 내가 어느 디렉터리(폴더)에 있는지 확인하는 명령어는?",
+  o:["`pwd`","`cd`","`ls`","`whoami`"], a:0,
+  ex:"`pwd`(Print Working Directory)는 현재 위치를 보여줍니다. `cd`는 이동, `ls`는 목록, `whoami`는 현재 사용자 이름입니다." },
+{ id:"1-1-2", lv:1, d:1,
+  q:"프롬프트가 아래와 같을 때, `~` 기호는 무엇을 뜻할까요?",
+  code:"student@security-lab:~$",
+  o:["내 홈 디렉터리 (/home/student)","맨 꼭대기 루트 디렉터리 (/)","관리자 권한 상태","명령어 입력을 기다리는 표시"], a:0,
+  ex:"`~`는 내 홈 디렉터리의 줄임말입니다. 루트는 `/`, 관리자 상태는 프롬프트 끝이 `#`으로 바뀌는 것으로 알 수 있습니다." },
+{ id:"1-1-3", lv:1, d:1,
+  q:"리눅스 디렉터리 구조에서 모든 폴더가 시작되는 맨 꼭대기 위치는 어떻게 표기할까요?",
+  o:["`/`","`C:\\`","`~`","`..`"], a:0,
+  ex:"리눅스에는 C: 드라이브가 없고 모든 것이 루트 `/` 하나에서 시작합니다. `..`은 한 단계 위(부모) 디렉터리입니다." },
+
+{ id:"1-2-1", lv:1, d:2,
+  q:"`memo.txt`에 이미 내용이 있습니다. 아래 명령을 실행하면 어떻게 될까요?",
+  code:"echo hello >> memo.txt",
+  o:["memo.txt의 맨 끝에 hello가 추가된다","기존 내용이 지워지고 hello만 남는다","memo.txt가 삭제된다","화면에 hello가 출력될 뿐 파일은 그대로다"], a:0,
+  ex:"`>>`는 '이어 쓰기'입니다. `>` 하나는 기존 내용을 지우고 새로 씁니다. 기록을 쌓을 때 `>`를 잘못 쓰면 이전 기록이 사라집니다." },
+{ id:"1-2-2", lv:1, d:2,
+  q:"터미널에서 `rm` 명령으로 지운 파일은 보통 어떻게 될까요?",
+  o:["휴지통 없이 바로 삭제되어 일반적으로 되돌릴 수 없다","휴지통으로 이동해 복구할 수 있다","30일 동안 자동 보관된다","재부팅하면 다시 나타난다"], a:0,
+  ex:"리눅스 명령줄에는 휴지통이 없습니다. 그래서 지우기 전에 `pwd`로 위치를 확인하고, 익숙해지기 전에는 `rm -i`로 하나씩 확인받는 습관이 중요합니다." },
+{ id:"1-2-3", lv:1, d:2,
+  q:"로그 파일에서 가장 최근 기록(파일의 마지막 부분)만 보고 싶을 때 쓰는 명령은?",
+  o:["`tail`","`head`","`touch`","`mkdir`"], a:0,
+  ex:"로그는 시간 순서대로 아래에 쌓이므로 최신 기록은 맨 뒤에 있습니다. `head`는 앞부분, `touch`는 빈 파일 만들기, `mkdir`는 디렉터리 만들기입니다." },
+
+{ id:"1-3-1", lv:1, d:3,
+  q:"파일 안에서 특정 단어가 들어간 '줄'만 골라 보여주는 명령은?",
+  o:["`grep`","`find`","`sort`","`wc`"], a:0,
+  ex:"`grep`은 글자로 줄을 찾습니다. `find`는 조건으로 '파일'을 찾고, `sort`는 정렬, `wc`는 개수 세기입니다." },
+{ id:"1-3-2", lv:1, d:3,
+  q:"명령어 사이에 쓰는 `|` (파이프)의 역할은?",
+  o:["앞 명령의 결과를 뒤 명령의 입력으로 넘긴다","두 명령을 동시에 따로 실행한다","앞 명령을 취소한다","결과를 파일로 저장한다"], a:0,
+  ex:"파이프는 컨베이어 벨트입니다. 예: `grep Failed auth.log | wc -l` → 실패한 줄을 찾아서 그 줄 수를 셉니다." },
+{ id:"1-3-3", lv:1, d:3,
+  q:"이름을 기준으로 파일이 어디에 있는지 찾는 명령은?",
+  o:["`find`","`grep`","`pwd`","`cat`"], a:0,
+  ex:"`find /home -name \"*.txt\"`처럼 위치와 조건을 주면 파일을 찾아 줍니다. `grep`은 파일 '안의 내용'을 찾는 명령입니다." },
+
+{ id:"1-4-1", lv:1, d:4,
+  q:"리눅스에서 무엇이든 할 수 있는 최고 관리자 계정의 이름은?",
+  o:["`root`","`admin`","`administrator`","`sudo`"], a:0,
+  ex:"리눅스의 최고 관리자는 root입니다. `sudo`는 계정 이름이 아니라 관리자 권한을 잠깐 빌려 쓰는 명령입니다." },
+{ id:"1-4-2", lv:1, d:4,
+  q:"명령어 앞에 붙이는 `sudo`의 의미로 가장 알맞은 것은?",
+  o:["일반 사용자가 관리자 권한을 잠깐 빌려 그 명령을 실행한다","관리자 계정으로 영구히 바뀐다","사용자를 삭제한다","서버를 재부팅한다"], a:0,
+  ex:"평소에는 일반 계정으로 일하고 필요할 때만 `sudo`로 권한을 빌리는 것이 '최소 권한 원칙'입니다. sudo 사용 기록은 로그에 남습니다." },
+{ id:"1-4-3", lv:1, d:4,
+  q:"`ls -l` 결과에 나오는 권한 표시 `-rw-r--r--`에서 `r`은 무엇을 뜻할까요?",
+  o:["읽기","실행","삭제","이름 변경"], a:0,
+  ex:"r=읽기(read), w=쓰기(write), x=실행(execute), -=권한 없음입니다." },
+
+{ id:"1-5-1", lv:1, d:5,
+  q:"Ubuntu에서 프로그램(패키지)을 설치하는 올바른 명령 형태는?",
+  o:["`sudo apt install 패키지이름`","`sudo install 패키지이름`","`get 패키지이름`","`download 패키지이름`"], a:0,
+  ex:"Ubuntu는 `apt`로 공식 저장소에서 프로그램을 설치합니다. 스마트폰 앱스토어와 비슷한 개념입니다." },
+{ id:"1-5-2", lv:1, d:5,
+  q:"지금 서버에서 실행 중인 프로세스(프로그램) 목록을 보는 명령은?",
+  o:["`ps aux`","`ls -la`","`history`","`clear`"], a:0,
+  ex:"`ps aux`는 모든 프로세스를 보여줍니다. 실시간으로 보려면 `top`을 씁니다. `history`는 내가 친 명령어 목록입니다." },
+{ id:"1-5-3", lv:1, d:5,
+  q:"실행한 명령이 끝나지 않고 계속 돌아갈 때, 강제로 멈추는 키는?",
+  o:["Ctrl + C","Ctrl + S","Alt + F4","Enter"], a:0,
+  ex:"Ctrl+C는 실행 중인 명령을 중단합니다. 참고로 Ctrl+S는 화면 출력을 멈춰 버려서 '먹통'처럼 보이게 만듭니다(Ctrl+Q로 풀림)." },
+
+{ id:"1-6-1", lv:1, d:6,
+  q:"원격 서버에 '암호화된' 방식으로 접속할 때 쓰는 것은?",
+  o:["SSH","Telnet","FTP","HTTP"], a:0,
+  ex:"SSH(Secure Shell)는 통신 내용을 암호화합니다. Telnet은 비밀번호까지 그대로 보이는 평문 통신이라 보안 점검에서 '사용 금지' 대상입니다." },
+{ id:"1-6-2", lv:1, d:6,
+  q:"서버의 IP 주소를 확인하는 명령은?",
+  o:["`ip a`","`pwd`","`uptime`","`date`"], a:0,
+  ex:"`ip a` 결과에서 `inet` 뒤의 숫자가 IP 주소입니다." },
+{ id:"1-6-3", lv:1, d:6,
+  q:"SSH가 기본으로 사용하는 포트 번호는?",
+  o:["22","80","443","3306"], a:0,
+  ex:"22=SSH, 80=HTTP, 443=HTTPS, 3306=MySQL. 자주 나오는 포트 번호는 외워 두면 로그를 볼 때 바로 읽힙니다." },
+
+{ id:"1-7-1", lv:1, d:7,
+  q:"리눅스에서 로그(기록) 파일들이 주로 모여 있는 디렉터리는?",
+  o:["`/var/log`","`/etc`","`/home`","`/bin`"], a:0,
+  ex:"기록은 `/var/log`, 설정은 `/etc`. 보안 점검의 두 축입니다." },
+{ id:"1-7-2", lv:1, d:7,
+  q:"Ubuntu에서 로그인 시도와 sudo 사용 기록이 남는 로그 파일은?",
+  o:["`/var/log/auth.log`","`/var/log/apt/history.log`","`/etc/passwd`","`/var/log/kern.log`"], a:0,
+  ex:"auth.log는 보안 담당자가 가장 많이 보는 로그입니다. apt/history.log는 설치 기록, /etc/passwd는 로그가 아니라 계정 목록 파일입니다." },
+{ id:"1-7-3", lv:1, d:7,
+  q:"auth.log에 `Failed password`라는 기록이 짧은 시간에 수백 줄 쌓여 있습니다. 가장 먼저 의심할 것은?",
+  o:["누군가 비밀번호를 반복 대입하는 공격을 하고 있다","디스크 용량이 부족하다","정상적으로 로그인이 잘 되고 있다","업데이트가 실패했다"], a:0,
+  ex:"짧은 시간 대량의 로그인 실패는 무작위 대입(Brute Force) 공격의 전형적인 흔적입니다." },
+
+{ id:"1-8-1", lv:1, d:8,
+  q:"보안 업데이트(패치)를 꾸준히 해야 하는 가장 중요한 이유는?",
+  o:["이미 알려진 보안 취약점을 고친 버전을 적용하기 위해","서버 화면 디자인을 바꾸기 위해","데이터를 자동 백업하기 위해","인터넷 속도를 높이기 위해"], a:0,
+  ex:"취약점이 공개되면 공격자도 그 내용을 알게 됩니다. 패치를 미루는 서버는 '문이 고장 났다'는 공지가 붙은 집과 같습니다." },
+{ id:"1-8-2", lv:1, d:8,
+  q:"Ubuntu에서 쉽게 방화벽 규칙을 설정할 수 있는 도구의 이름은?",
+  o:["`ufw`","`apt`","`cron`","`nano`"], a:0,
+  ex:"ufw(Uncomplicated Firewall). `sudo ufw status`로 상태를 봅니다. cron은 예약 작업, nano는 편집기입니다." },
+{ id:"1-8-3", lv:1, d:8,
+  q:"권한 오류가 나서 파일 권한을 `chmod 777`로 바꿨습니다. 이것이 위험한 이유는?",
+  o:["모든 사용자가 그 파일을 읽고, 고치고, 실행할 수 있게 되기 때문","파일이 자동으로 삭제되기 때문","root만 접근할 수 있게 되기 때문","파일이 숨김 파일이 되기 때문"], a:0,
+  ex:"777은 '누구에게나 전부 허용'입니다. 아무나 그 파일을 악성 코드로 바꿔치기할 수 있습니다. 필요한 사람에게 필요한 만큼만 주는 것이 원칙입니다." },
+
+/* ===================== 중 (lv2) ===================== */
+{ id:"2-1-1", lv:2, d:1,
+  q:"지금 `/var/log`에 있습니다. 아래 명령을 실행하면 어디로 이동할까요?",
+  code:"cd ../../etc",
+  o:["`/etc`","`/var/etc`","`/var/log/etc`","`/home/etc`"], a:0,
+  ex:"/var/log → `..` → /var → `..` → / → etc → /etc. 경로를 왼쪽부터 한 칸씩 따라가면 됩니다." },
+{ id:"2-1-2", lv:2, d:1,
+  q:"숨김 파일(이름이 `.`으로 시작)까지 포함해 권한·소유자 등을 자세히 보는 명령은?",
+  o:["`ls -la`","`ls`","`ls -h`","`ls -r`"], a:0,
+  ex:"`-l`은 자세히, `-a`는 숨김 파일까지. 공격자는 `.cache2`처럼 점으로 시작하는 이름으로 파일을 숨기므로 점검 때는 항상 `-a`가 필요합니다." },
+{ id:"2-1-3", lv:2, d:1,
+  q:"다음 중 '절대경로'는 무엇일까요?",
+  o:["`/home/student/lab`","`../lab`","`./lab`","`lab/day1`"], a:0,
+  ex:"절대경로는 `/`로 시작해서 지금 위치와 상관없이 항상 같은 곳을 가리킵니다. 나머지는 현재 위치 기준의 상대경로입니다." },
+
+{ id:"2-2-1", lv:2, d:2,
+  q:"같은 디렉터리에서 아래 명령을 실행하면?",
+  code:"mv a.txt b.txt",
+  o:["a.txt의 이름이 b.txt로 바뀐다 (a.txt는 없어짐)","a.txt는 그대로 두고 복사본 b.txt가 생긴다","두 파일의 내용이 합쳐진다","대상 폴더가 없어서 오류가 난다"], a:0,
+  ex:"같은 자리에서의 `mv`는 '이름 바꾸기'입니다. 복사는 `cp`입니다. 만약 b.txt가 이미 있었다면 덮어써지니 주의해야 합니다." },
+{ id:"2-2-2", lv:2, d:2,
+  q:"로그 파일에 새로 추가되는 줄을 실시간으로 계속 지켜보는 명령은?",
+  o:["`tail -f 파일`","`head -f 파일`","`cat -f 파일`","`less -n 파일`"], a:0,
+  ex:"`tail -f`는 가장 원시적인 형태의 보안관제입니다. Ctrl+C로 빠져나옵니다." },
+{ id:"2-2-3", lv:2, d:2,
+  q:"nano 편집기에서 수정한 내용을 저장하고 빠져나오는 올바른 순서는?",
+  o:["Ctrl+O → Enter → Ctrl+X","Ctrl+S → Ctrl+Q","`:wq` 입력 후 Enter","Esc → Ctrl+C"], a:0,
+  ex:"nano 화면 아래의 `^O`, `^X`에서 ^는 Ctrl을 뜻합니다. `:wq`는 vim 편집기의 저장·종료 명령입니다." },
+
+{ id:"2-3-1", lv:2, d:3,
+  q:"`/etc/passwd`에서 `nologin`이라는 단어가 '들어있지 않은' 줄만 출력하는 명령은?",
+  o:["`grep -v nologin /etc/passwd`","`grep nologin /etc/passwd`","`grep -c nologin /etc/passwd`","`find -v nologin /etc/passwd`"], a:0,
+  ex:"`-v`는 '반대로(제외)'입니다. `-c`는 개수만 세는 옵션입니다." },
+{ id:"2-3-2", lv:2, d:3,
+  q:"아래 명령의 결과가 `37`이었습니다. 이 숫자의 의미는?",
+  code:"grep \"Failed password\" /var/log/auth.log | wc -l",
+  o:["auth.log 안에서 'Failed password'가 들어간 줄이 37개다","auth.log의 37번째 줄에 실패 기록이 있다","37명의 서로 다른 사용자가 실패했다","마지막 실패 후 37초가 지났다"], a:0,
+  ex:"`grep`이 걸러낸 줄들을 `wc -l`이 셉니다. '서로 다른 사용자/IP 수'를 보려면 그 칸만 뽑아 `sort | uniq`를 거쳐야 합니다." },
+{ id:"2-3-3", lv:2, d:3,
+  q:"`/var/log` 아래에서 이름이 `.log`로 끝나는 파일을 모두 찾는 명령은?",
+  o:["`find /var/log -name \"*.log\"`","`grep \"*.log\" /var/log`","`ls /var/log -name log`","`find .log /var/log`"], a:0,
+  ex:"`find 위치 -name \"패턴\"` 순서입니다. `*`는 '아무 글자나'라는 뜻이고, 따옴표로 감싸야 셸이 먼저 해석하지 않습니다." },
+
+{ id:"2-4-1", lv:2, d:4,
+  q:"권한 `-rwxr-x---`를 숫자로 나타내면?",
+  o:["750","754","640","770"], a:0,
+  ex:"rwx=4+2+1=7, r-x=4+0+1=5, ---=0. 세 덩어리로 끊어서 각각 더합니다." },
+{ id:"2-4-2", lv:2, d:4,
+  q:"`/etc/passwd`의 아래 줄에서 알 수 있는 것은?",
+  code:"alice:x:1001:1001::/home/alice:/usr/sbin/nologin",
+  o:["alice는 로그인 셸이 nologin이라 직접 로그인할 수 없다","alice는 관리자(root) 권한을 가졌다","alice의 비밀번호는 x이다","alice는 비밀번호가 비어 있다"], a:0,
+  ex:"마지막 칸이 로그인 셸입니다. `x`는 '실제 비밀번호(암호화 값)는 /etc/shadow에 있다'는 표시이고, 관리자 여부는 세 번째 칸(UID)이 0인지로 봅니다." },
+{ id:"2-4-3", lv:2, d:4,
+  q:"alice가 원래 속한 그룹은 그대로 두고 `secteam` 그룹에 '추가'하는 명령은?",
+  o:["`sudo usermod -aG secteam alice`","`sudo usermod -G secteam alice`","`sudo groupadd secteam alice`","`sudo chown secteam alice`"], a:0,
+  ex:"`-a`(append)를 빼면 기존 그룹에서 모두 빠지고 secteam만 남습니다. 자기 계정에 이 실수를 하면 sudo 권한을 잃습니다." },
+
+{ id:"2-5-1", lv:2, d:5,
+  q:"쓰지 않는 `cups` 서비스를 '지금 끄고', '재부팅 후에도 자동으로 켜지지 않게' 하는 한 줄 명령은?",
+  o:["`sudo systemctl disable --now cups`","`sudo systemctl stop cups`","`sudo systemctl restart cups`","`sudo kill -9 cups`"], a:0,
+  ex:"stop은 지금만 끄고, disable은 다음 부팅부터 자동 시작을 막습니다. `--now`가 둘을 합쳐 줍니다." },
+{ id:"2-5-2", lv:2, d:5,
+  q:"동료가 `sudo apt update`만 실행하고 '패치 완료'라고 보고했습니다. 실제 상태는?",
+  o:["설치 가능한 새 버전 목록만 갱신됐고 실제 업데이트는 설치되지 않았다","모든 패키지가 최신 버전으로 설치됐다","커널까지 교체되어 재부팅만 하면 된다","update는 오류가 나는 명령이다"], a:0,
+  ex:"update=목록 갱신, upgrade=실제 설치. 보통 `sudo apt update && sudo apt upgrade -y`로 이어서 씁니다." },
+{ id:"2-5-3", lv:2, d:5,
+  q:"`ps aux` 결과의 한 줄입니다. 가장 의심스러운 이유로 알맞은 것은?",
+  code:"USER   PID  %CPU %MEM  COMMAND\nroot   3311 98.5  1.2  /tmp/.x/kworkerd",
+  o:["/tmp 아래 숨김 폴더에서 root 권한으로 실행되며 CPU를 과도하게 쓰고 있다","PID 번호가 3000번대라서","프로그램 이름이 k로 시작해서","메모리를 1.2%밖에 쓰지 않아서"], a:0,
+  ex:"정상 프로그램은 /tmp에서 실행되지 않습니다. 커널 작업처럼 보이는 이름으로 위장하고 CPU를 독차지하는 것은 채굴형 악성코드의 대표 증상입니다." },
+
+{ id:"2-6-1", lv:2, d:6,
+  q:"`sudo ss -tulnp` 결과에 아래 줄이 보입니다. 의미는?",
+  code:"tcp  LISTEN  0.0.0.0:3306  0.0.0.0:*  users:((\"mysqld\",pid=842))",
+  o:["MySQL이 모든 네트워크에서 3306번 접속을 받고 있다 (외부 노출 가능)","MySQL이 서버 자기 자신에게서 오는 접속만 받는다","MySQL이 꺼져 있다","현재 3306명이 접속해 있다"], a:0,
+  ex:"`0.0.0.0`은 '모든 곳에서', `127.0.0.1`은 '나 자신에게서만'입니다. DB가 0.0.0.0으로 열려 있으면 점검 대상입니다." },
+{ id:"2-6-2", lv:2, d:6,
+  q:"`ping 8.8.8.8`은 성공하는데 `ping google.com`은 실패합니다. 가장 먼저 의심할 곳은?",
+  o:["DNS (이름을 IP로 바꾸는 단계)","랜선이 빠졌다","방화벽이 모든 통신을 막고 있다","CPU 과부하"], a:0,
+  ex:"IP로 직접 가는 길은 열려 있으니 '이름 → IP 변환'만 실패한 것입니다. 이렇게 단계별로 좁혀 가는 것이 트러블슈팅입니다." },
+{ id:"2-6-3", lv:2, d:6,
+  q:"SSH 키 인증을 설정할 때, 서버의 `~/.ssh/authorized_keys`에 넣는 것은?",
+  o:["공개키 (.pub)","개인키","공개키와 개인키 둘 다","내 비밀번호"], a:0,
+  ex:"공개키는 서버 문에 다는 자물쇠, 개인키는 내 주머니의 열쇠입니다. 개인키는 절대 서버나 메신저로 보내면 안 됩니다." },
+
+{ id:"2-7-1", lv:2, d:7,
+  q:"아래 로그에서 공격 시도의 출발지 IP는?",
+  code:"Oct 15 03:14:09 web01 sshd[9911]: Failed password for root from 203.0.113.45 port 40022 ssh2",
+  o:["203.0.113.45","9911","40022","web01"], a:0,
+  ex:"`from` 뒤가 출발지 IP입니다. 9911은 프로세스 번호(PID), 40022는 상대방 쪽 포트, web01은 이 서버의 이름입니다." },
+{ id:"2-7-2", lv:2, d:7,
+  q:"SSH 로그에서 로그인 '성공' 기록만 찾을 때 grep에 쓰는 단어는?",
+  o:["`Accepted`","`Failed`","`Invalid`","`Disconnected`"], a:0,
+  ex:"실패는 Failed, 성공은 Accepted. 이 두 단어가 SSH 로그 분석의 기본 검색어입니다." },
+{ id:"2-7-3", lv:2, d:7,
+  q:"`Failed password for invalid user admin`, `... invalid user test`, `... invalid user oracle` 같은 기록이 연달아 있습니다. 해석으로 알맞은 것은?",
+  o:["존재하지 않는 흔한 계정 이름을 자동으로 대입해 보는 공격이다","admin 계정이 잠겼다","관리자가 비밀번호를 바꾸는 중이다","정상적인 로그인 과정이다"], a:0,
+  ex:"invalid user는 '이 서버에 없는 계정'이라는 뜻입니다. 흔한 이름을 차례로 넣어 보는 것은 자동화 도구로 사전 대입 중이라는 신호입니다." },
+
+{ id:"2-8-1", lv:2, d:8,
+  q:"SSH로 원격 접속 중에 방화벽을 처음 켜려고 합니다. `sudo ufw enable` 전에 반드시 먼저 해야 할 것은?",
+  o:["`sudo ufw allow 22/tcp`","`sudo ufw default deny incoming`만 실행","`sudo ufw reset`","`sudo ufw disable`"], a:0,
+  ex:"SSH 허용 규칙 없이 방화벽을 켜면 지금 접속 중인 나 자신이 차단됩니다. '허용 먼저, 켜기는 나중'." },
+{ id:"2-8-2", lv:2, d:8,
+  q:"스크립트를 만들고 `./check.sh`로 실행했더니 `Permission denied`가 나옵니다. 해결 방법은?",
+  o:["`chmod +x check.sh`","`sudo rm check.sh`","`chown root check.sh`","`mv check.sh check.txt`"], a:0,
+  ex:"파일에 실행(x) 권한이 없어서입니다. 권한 지식이 스크립트에서 바로 쓰이는 예입니다." },
+{ id:"2-8-3", lv:2, d:8,
+  q:"bash 스크립트에서 변수에 값을 넣는 올바른 문법은?",
+  o:["`COUNT=10`","`COUNT = 10`","`$COUNT=10`","`set COUNT 10`"], a:0,
+  ex:"`=` 양옆에 공백이 있으면 bash는 COUNT를 '명령어'로 해석해서 오류가 납니다. 값을 꺼내 쓸 때만 `$COUNT`처럼 `$`를 붙입니다." },
+
+/* ===================== 상 (lv3) ===================== */
+{ id:"3-1-1", lv:3, d:1,
+  q:"동료가 `ls /tmp` 결과를 보여주며 '임시 폴더에 수상한 파일 없음'이라고 보고했습니다. 이 결론의 한계와 올바른 확인 방법은?",
+  o:["숨김 파일과 하위 폴더가 빠져 있다 → `ls -la /tmp`와 `find /tmp -type f`로 다시 확인","권한이 부족했다 → `sudo ls /tmp`로 다시 확인","내용을 안 봤다 → `cat /tmp`로 확인","위치가 틀렸다 → `cd /tmp` 후 `pwd`로 확인"], a:0,
+  ex:"그냥 `ls`는 점(.)으로 시작하는 파일을 보여주지 않고, 하위 폴더 안까지 보지 않습니다. '없다'는 결론은 숨김·하위까지 확인했을 때만 내릴 수 있습니다." },
+{ id:"3-1-2", lv:3, d:1,
+  q:"현재 위치가 `/home/student/lab/day1`일 때 아래 명령 실행 후 위치는?",
+  code:"cd ../../../student/./lab",
+  o:["`/home/student/lab`","`/home/student/lab/day1`","`/student/lab`","디렉터리가 없어서 오류"], a:0,
+  ex:"day1 → .. lab → .. student → .. home → student → `.`(제자리) → lab. 결과는 /home/student/lab입니다." },
+{ id:"3-1-3", lv:3, d:1,
+  q:"매일 새벽 cron으로 실행되는 점검 스크립트 안에서는 `cd logs` 같은 상대경로보다 절대경로를 쓰는 것이 안전합니다. 이유는?",
+  o:["cron으로 실행될 때의 시작 위치가 내가 터미널에서 테스트한 위치와 다를 수 있기 때문","절대경로가 실행 속도가 훨씬 빠르기 때문","상대경로는 root만 쓸 수 있기 때문","cron은 상대경로 문법 자체를 지원하지 않기 때문"], a:0,
+  ex:"상대경로는 '지금 어디서 실행되느냐'에 따라 가리키는 곳이 달라집니다. 자동 실행 환경에서는 예상과 다른 폴더에서 파일을 만들거나 지울 수 있습니다." },
+
+{ id:"3-2-1", lv:3, d:2,
+  q:"정리용 스크립트에 아래 줄이 있습니다. 만약 변수 `DIR`가 비어 있는 상태로 root 권한으로 실행되면?",
+  code:"rm -rf $DIR/*",
+  o:["`rm -rf /*`가 되어 시스템 전체가 삭제될 수 있다","현재 폴더의 파일만 지워진다","변수가 비면 오류가 나서 아무 일도 일어나지 않는다","파일이 휴지통으로 이동한다"], a:0,
+  ex:"빈 변수는 그냥 사라지므로 `/*`만 남습니다. 실무 스크립트에서 변수 값 확인 없이 `rm -rf`를 쓰는 것은 대형 사고의 단골 원인입니다." },
+{ id:"3-2-2", lv:3, d:2,
+  q:"점검 결과를 `report.txt`에 매일 '누적'해야 하는데, 스크립트가 `echo ... > report.txt`로 되어 있습니다. 1주일 뒤 report.txt에는?",
+  o:["가장 마지막 실행 결과만 남아 있다","7일치 결과가 모두 쌓여 있다","파일이 비어 있다","날짜별로 7개 파일이 생겼다"], a:0,
+  ex:"`>`는 매번 덮어씁니다. 누적하려면 `>>`를 써야 합니다. 증거·기록이 사라지는 실수는 보안 업무에서 치명적입니다." },
+{ id:"3-2-3", lv:3, d:2,
+  q:"운영 중인 서버의 SSH 설정 파일을 고쳐야 합니다. 실무 습관으로 가장 알맞은 순서는?",
+  o:["원본 백업 → 수정 → 문법 검사 → 서비스 재시작 → 기존 창 유지한 채 새 창으로 접속 확인","수정 → 재시작 → 문제가 생기면 백업","권한을 777로 바꾼 뒤 수정 → 재부팅","재부팅 → 수정 → 다시 재부팅"], a:0,
+  ex:"백업이 있어야 되돌릴 수 있고, 기존 접속 창을 살려 둬야 설정이 틀렸을 때 복구할 수 있습니다." },
+
+{ id:"3-3-1", lv:3, d:3,
+  q:"아래 명령이 출력하는 것은?",
+  code:"cat access.log | awk '{print $1}' | sort | uniq -c | sort -rn | head -5",
+  o:["접속 횟수가 가장 많은 IP 상위 5개와 각 횟수","로그 파일의 처음 5줄","서로 다른 IP 5개를 무작위로","오류가 발생한 요청 5개"], a:0,
+  ex:"첫 칸(IP)만 뽑기 → 정렬 → 같은 값 묶어 세기 → 많은 순 정렬 → 상위 5개. '우리 서버를 가장 많이 두드린 IP'를 찾는 관제 실무 패턴입니다." },
+{ id:"3-3-2", lv:3, d:3,
+  q:"위 명령에서 `uniq -c` 앞의 `sort`를 빼면 어떻게 될까요?",
+  o:["떨어져 있는 같은 IP가 따로따로 집계되어 횟수가 틀어진다","결과가 완전히 똑같다","문법 오류가 난다","자동으로 내림차순 정렬된다"], a:0,
+  ex:"`uniq`는 '연속으로 붙어 있는' 같은 줄만 묶습니다. 그래서 반드시 먼저 정렬해서 같은 값끼리 붙여 줘야 합니다." },
+{ id:"3-3-3", lv:3, d:3,
+  q:"침해 의심 서버에서 '최근 3일 안에 수정된' `/etc` 아래 파일을 찾는 명령은?",
+  o:["`find /etc -mtime -3`","`find /etc -mtime +3`","`ls -lt /etc | head -3`","`grep -r 3 /etc`"], a:0,
+  ex:"`-mtime -3`은 3일 이내, `+3`은 3일보다 오래된 것입니다. `ls -lt | head -3`은 최신 3개 항목일 뿐 하위 폴더를 보지 않습니다." },
+
+{ id:"3-4-1", lv:3, d:4,
+  q:"점검 중 아래 파일을 발견했습니다. 가장 정확한 판단은?",
+  code:"-rwsr-xr-x 1 root root 224848 Oct 14 02:11 /tmp/.sysupd",
+  o:["root 소유 SUID 파일이라 누가 실행해도 root 권한으로 동작한다 — 숨김 위치까지 고려하면 백도어 의심","sticky bit가 걸려 있어 아무도 지울 수 없는 파일이다","읽기 전용이라 위험하지 않다","일반 임시 파일이라 무시해도 된다"], a:0,
+  ex:"소유자 x 자리의 `s`가 SUID입니다. 정상 SUID는 /usr/bin/passwd 같은 정해진 프로그램뿐이고, /tmp의 숨김 파일에 붙어 있다면 다시 root가 되기 위한 뒷문일 가능성이 큽니다." },
+{ id:"3-4-2", lv:3, d:4,
+  q:"`/etc/passwd`에서 아래 줄을 발견했습니다. 무엇이 문제일까요?",
+  code:"backup:x:0:0::/home/backup:/bin/bash",
+  o:["UID가 0이라 root와 똑같은 권한을 가진 숨은 관리자 계정이다","백업용 서비스 계정이라 정상이다","비밀번호가 비어 있는 계정이다","로그인이 불가능한 계정이다"], a:0,
+  ex:"세 번째 칸이 UID입니다. 이름이 그럴듯해도 UID 0이면 root입니다. `awk -F: '$3==0' /etc/passwd`로 root 하나만 나오는지 확인하는 것이 기본 점검입니다." },
+{ id:"3-4-3", lv:3, d:4,
+  q:"웹 서버 업로드 폴더에서 '쓰기 권한 없음' 오류가 납니다. 가장 바람직한 해결은?",
+  o:["웹 서버 실행 계정에게만 필요한 쓰기 권한을 주고 그 외 사용자 권한은 최소화한다","`chmod -R 777`로 모두 허용한다","`chown -R root`로 root 소유로 바꾼다","폴더를 지우고 다시 만든다"], a:0,
+  ex:"업로드 폴더는 외부 파일이 들어오는 곳이라, 모두에게 쓰기·실행을 열면 웹셸 공격의 통로가 됩니다. 최소 권한 원칙대로 '누구에게 무엇이 필요한가'를 따져야 합니다." },
+
+{ id:"3-5-1", lv:3, d:5,
+  q:"침해가 의심되는 서버에서 수상한 프로세스를 발견했습니다. 가장 먼저 할 일로 알맞은 것은?",
+  o:["ps·ss 결과 등 현재 상태를 파일로 기록해 증거를 남기고 보고한다","즉시 `kill -9`로 종료한다","바로 서버를 재부팅한다","로그를 정리해 디스크를 확보한다"], a:0,
+  ex:"프로세스를 바로 죽이거나 재부팅하면 메모리에 있던 증거가 사라집니다. 기록 → 보고 → 상의 후 조치가 침해대응의 기본 순서입니다." },
+{ id:"3-5-2", lv:3, d:5,
+  q:"악성 프로세스를 종료하고 파일을 지웠는데, 몇 분 뒤 같은 파일이 다시 생겨 실행됩니다. 가장 먼저 점검할 곳은?",
+  o:["cron 예약 작업 (`crontab -l`, `/etc/cron.d` 등)과 서비스 목록","`/etc/hosts` 파일","`history` 명령 기록","apt 설치 목록"], a:0,
+  ex:"공격자는 '지속성'을 위해 cron이나 가짜 서비스로 악성 파일을 주기적으로 되살립니다. 원인을 끊지 않으면 지워도 계속 돌아옵니다." },
+{ id:"3-5-3", lv:3, d:5,
+  q:"`apt list --upgradable`에 `openssh-server` 보안 업데이트가 3주째 설치되지 않은 채 남아 있습니다. 바른 판단은?",
+  o:["외부에 노출된 서비스의 알려진 취약점이 방치된 상태일 수 있으므로 영향 검토 후 빠르게 업데이트한다","서비스가 잘 돌고 있으니 문제없다","SSH를 삭제한다","`apt update`를 한 번 더 실행하면 해결된다"], a:0,
+  ex:"SSH처럼 외부에서 접근 가능한 서비스의 패치 지연은 위험도가 높습니다. 회사 정책에 따라 테스트·공지 후 신속히 적용하는 것이 원칙입니다." },
+
+{ id:"3-6-1", lv:3, d:6,
+  q:"직원 PC의 `/etc/hosts`에서 아래 줄이 발견됐습니다. 위험한 이유는?",
+  code:"203.0.113.9   www.mybank.co.kr",
+  o:["사용자가 정상 주소를 입력해도 지정된 IP(가짜 사이트)로 연결될 수 있다","해당 은행 사이트 접속이 차단될 뿐이다","DNS 조회가 빨라지는 성능 설정이다","/etc/hosts는 실제 접속에 영향을 주지 않는다"], a:0,
+  ex:"/etc/hosts는 DNS보다 먼저 참고되는 '이름 → IP' 지정 파일입니다. 이를 변조해 피싱 사이트로 보내는 것은 고전적인 악성코드 수법입니다." },
+{ id:"3-6-2", lv:3, d:6,
+  q:"매일 접속하던 서버에 SSH로 접속했더니 `REMOTE HOST IDENTIFICATION HAS CHANGED!` 경고가 나옵니다. 알맞은 대응은?",
+  o:["서버 재설치 여부를 확인하기 전까지 접속을 보류한다 — 중간자 공격 가능성","경고는 형식적인 것이니 무시하고 접속한다","known_hosts를 지우고 바로 다시 접속한다","비밀번호를 바꾼 뒤 접속한다"], a:0,
+  ex:"서버의 '신분증(호스트 키)'이 바뀌었다는 뜻입니다. 재설치 같은 정상 사유가 확인되지 않으면 누군가 중간에서 가로채고 있을 수 있습니다." },
+{ id:"3-6-3", lv:3, d:6,
+  q:"DB는 같은 서버의 웹 프로그램만 사용하는데, `ss` 결과에 `0.0.0.0:3306`으로 열려 있습니다. 가장 적절한 조치는?",
+  o:["DB가 127.0.0.1에서만 접속을 받도록 바꾸거나, 방화벽으로 허용된 곳만 접근하게 한다","포트 번호를 3307로 바꾼다","DB 서비스를 꺼 버린다","같은 서버에서 쓰니 그대로 둔다"], a:0,
+  ex:"필요 없는 노출을 없애는 것이 '공격 표면 줄이기'입니다. 포트 번호만 바꾸는 것은 근본적인 해결이 아닙니다." },
+
+{ id:"3-7-1", lv:3, d:7,
+  q:"같은 IP에서 `Failed password for root`가 200번 기록된 뒤, 같은 IP로 `Accepted password for root`가 한 줄 찍혀 있습니다. 판단과 조치로 알맞은 것은?",
+  o:["대입 공격이 성공해 root가 탈취됐을 수 있다 → 즉시 보고, IP 차단, 비밀번호 변경, 접속 이후 행위 조사","관리자가 비밀번호를 여러 번 헷갈린 것이니 정상이다","결국 로그인됐으니 문제없다","흔적을 지우기 위해 auth.log를 비운다"], a:0,
+  ex:"'실패 다수 → 같은 IP 성공'은 가장 확실한 침해 패턴입니다. 새 계정, cron, 수상한 프로세스, 바뀐 파일을 조사해야 합니다." },
+{ id:"3-7-2", lv:3, d:7,
+  q:"auth.log를 보니 새벽 2시~4시 사이 기록만 통째로 비어 있고, 앞뒤 기록은 정상입니다. 가장 먼저 의심할 것은?",
+  o:["공격자가 해당 시간대의 흔적을 지웠을 가능성","그 시간에는 아무도 없었으니 정상","로그가 자동 압축된 것","서버 시계가 잠시 멈춘 것"], a:0,
+  ex:"로그 삭제·변조는 공격자의 흔한 마무리 작업입니다. 그래서 실무에서는 로그를 별도 서버로 실시간 전송해 원본을 보존합니다." },
+{ id:"3-7-3", lv:3, d:7,
+  q:"auth.log에서 '로그인 실패가 많은 IP 순위'를 뽑는 명령으로 알맞은 것은?",
+  o:["`grep \"Failed password\" auth.log | grep -oE \"from [0-9.]+\" | sort | uniq -c | sort -rn`","`grep \"Failed password\" auth.log | wc -l`","`tail auth.log | sort`","`grep -c from auth.log`"], a:0,
+  ex:"실패 줄 → IP 부분만 잘라내기 → 정렬 → 묶어 세기 → 많은 순. `wc -l`은 전체 실패 횟수만 알려줄 뿐 IP별로 나눠 주지 않습니다." },
+
+{ id:"3-8-1", lv:3, d:8,
+  q:"`/etc/ssh/sshd_config.d/`에 보안 설정을 추가했습니다. 적용 절차로 가장 안전한 것은?",
+  o:["`sudo sshd -t`로 문법 검사 → 재시작 → 기존 창은 유지한 채 새 창으로 접속 확인","재시작 후 기존 창을 바로 닫는다","서버를 재부팅해서 확인한다","SSH 설정은 저장하면 자동 적용되므로 확인할 필요 없다"], a:0,
+  ex:"설정이 틀렸을 때 기존 접속 창이 마지막 비상구입니다. 새 창으로 접속이 확인된 다음에 기존 창을 닫습니다." },
+{ id:"3-8-2", lv:3, d:8,
+  q:"`PasswordAuthentication no`(비밀번호 로그인 금지)를 적용하기 전에 반드시 확인해야 하는 것은?",
+  o:["SSH 키 인증으로 실제 접속이 되는지","root 비밀번호가 설정되어 있는지","방화벽이 꺼져 있는지","`apt update`를 했는지"], a:0,
+  ex:"키 접속이 확인되지 않은 상태에서 비밀번호 로그인을 막으면 아무도 들어갈 수 없게 됩니다. 강력한 설정일수록 순서가 중요합니다." },
+{ id:"3-8-3", lv:3, d:8,
+  q:"아래 스크립트 줄이 오류를 냅니다. 원인은?",
+  code:"if [$FAIL -ge 5]; then",
+  o:["대괄호 안쪽 양옆에 공백이 없다 → `[ $FAIL -ge 5 ]`","`-ge` 대신 `>=`를 써야 한다","`then`이 필요 없다","변수 앞의 `$`를 빼야 한다"], a:0,
+  ex:"`[`는 그 자체가 명령어라서 앞뒤가 띄어져 있어야 합니다. 숫자 비교는 `-ge`(크거나 같다)가 맞는 표현입니다." }
+];
+
+/* 영역별 피드백 — low(<50) / mid(50~79) / high(80+) */
+const FEEDBACK = {
+  1: {
+    low: "터미널에서 '지금 어디에 있고, 어디로 가는지'가 아직 잡혀 있지 않습니다. 모든 실습의 출발점이라 이 영역이 약하면 뒤의 내용이 전부 헷갈립니다.",
+    mid: "기본 이동은 되지만, 상대경로 계산이나 숨김 파일 확인 같은 디테일에서 실수가 납니다.",
+    high: "경로 개념과 기본 조작이 안정적입니다. 이 감각을 스크립트·자동화로 넓혀 가면 됩니다.",
+    todo: ["`pwd` → `ls -la` → `cd`를 반복하며 / 아래 주요 디렉터리(/etc, /var/log, /home, /tmp)를 직접 돌아다니기", "종이에 디렉터리 나무를 그리고 `cd ../..` 결과를 먼저 예상한 뒤 실행해서 맞춰 보기"]
+  },
+  2: {
+    low: "파일을 만들고 지우고 읽는 기본 동작이 아직 낯섭니다. 특히 `>`와 `>>`, `rm`의 위험성은 실무 사고와 직결되니 확실히 해야 합니다.",
+    mid: "기본 명령은 알지만 덮어쓰기·삭제처럼 '되돌릴 수 없는 동작'에 대한 감각이 더 필요합니다.",
+    high: "파일 조작과 편집이 안정적입니다. 설정 파일을 고치기 전 백업하는 습관까지 몸에 붙이세요.",
+    todo: ["`echo`로 파일에 `>`와 `>>`를 번갈아 써 보고 `cat`으로 차이 확인", "nano로 파일을 열어 수정·저장·종료(Ctrl+O, Ctrl+X)를 10번 반복"]
+  },
+  3: {
+    low: "로그에서 원하는 줄을 건져 올리는 능력이 아직 부족합니다. 보안관제 업무의 절반이 이 영역이라 가장 우선해서 보강해야 합니다.",
+    mid: "`grep` 단독 사용은 되지만, 파이프로 여러 명령을 이어 붙이는 데서 막힙니다.",
+    high: "grep·파이프 조합을 읽고 쓸 수 있습니다. 정규표현식과 awk로 한 단계 더 나가 보세요.",
+    todo: ["`/etc/passwd`로 `grep`, `grep -v`, `grep -c`, `cut -d: -f1` 연습", "`sort | uniq -c | sort -rn` 패턴을 auth.log에 직접 적용해 IP 순위 뽑아 보기"]
+  },
+  4: {
+    low: "권한 표시(rwx)와 계정 구조를 아직 읽지 못합니다. 보안 점검 기준표에서 가장 많은 항목이 이 영역이라 반드시 넘어야 할 산입니다.",
+    mid: "rwx와 숫자 변환은 되지만, UID 0·SUID처럼 '위험 신호'를 알아보는 눈이 아직 부족합니다.",
+    high: "권한과 계정을 보안 관점에서 읽을 수 있습니다. 취약점 진단 기준 문서의 계정·파일 관리 항목을 읽어 볼 단계입니다.",
+    todo: ["`ls -l` 결과 10줄을 골라 권한을 숫자로 바꿔 보기 (rwx=7, r-x=5, r--=4)", "`awk -F: '$3==0' /etc/passwd`, `find / -perm -4000 2>/dev/null`을 실행하고 결과 설명해 보기"]
+  },
+  5: {
+    low: "서버에서 무엇이 돌고 있는지 확인하고 관리하는 방법이 아직 낯섭니다. 업데이트 개념(update vs upgrade)부터 정리가 필요합니다.",
+    mid: "기본 명령은 알지만, 침해 상황에서 프로세스·cron을 어떻게 봐야 하는지의 판단이 약합니다.",
+    high: "서비스·패키지 관리와 침해 대응 판단이 안정적입니다.",
+    todo: ["`ps aux`, `systemctl status ssh`, `systemctl list-units --type=service --state=running` 결과를 하나씩 읽어 보기", "`sudo apt update && sudo apt upgrade -y`를 직접 실행하고 둘의 차이 설명해 보기"]
+  },
+  6: {
+    low: "IP·포트·SSH 같은 네트워크 기본 개념이 아직 잡혀 있지 않습니다. 정보보안기사 등 다음 단계 공부의 기초이므로 꼭 보강이 필요합니다.",
+    mid: "기본 명령은 알지만 `ss` 결과의 0.0.0.0/127.0.0.1처럼 '노출 여부'를 읽는 부분이 약합니다.",
+    high: "열린 포트와 SSH를 보안 관점에서 판단할 수 있습니다. TCP/IP 이론 공부로 넓혀 가세요.",
+    todo: ["`ip a`, `ping -c 4`, `sudo ss -tulnp`를 실행하고 결과를 한 줄씩 해석해 보기", "SSH 키를 직접 만들어 키 인증 접속까지 성공해 보기"]
+  },
+  7: {
+    low: "로그를 읽고 공격 흔적을 구분하는 능력이 아직 부족합니다. 보안관제·침해대응 직무를 원한다면 가장 중요한 영역입니다.",
+    mid: "로그 한 줄은 읽지만, 여러 줄을 종합해 '공격인지, 성공했는지'를 판단하는 단계가 약합니다.",
+    high: "로그에서 공격 패턴과 위험도를 판단할 수 있습니다. 관제 직무 면접에서 강점이 될 수 있습니다.",
+    todo: ["실습 서버에 일부러 SSH 로그인을 틀린 뒤 auth.log에서 그 기록 찾아보기", "Failed / Accepted / Invalid user 줄을 각각 찾고, 시간·계정·IP를 표로 정리해 보기"]
+  },
+  8: {
+    low: "서버를 잠그는 기본 보안 설정과 스크립트 문법이 아직 낯섭니다. 앞 영역들을 먼저 다진 뒤 이어서 공부하면 됩니다.",
+    mid: "설정 방법은 알지만 '어떤 순서로 해야 사고가 안 나는지'의 실무 감각이 더 필요합니다.",
+    high: "방화벽·SSH 설정과 점검 스크립트를 안전하게 다룰 수 있습니다. 점검 자동화 스크립트를 직접 만들어 포트폴리오로 남겨 보세요.",
+    todo: ["가이드 12장 순서대로 스냅샷 → ufw → SSH 설정을 직접 적용", "가이드 13장 점검 스크립트를 직접 타이핑하고, 항목을 하나 추가해 보기"]
+  }
+};
+
+</script>
+<script>
+(function () {
+"use strict";
+
+/* ── 도우미 ── */
+const $ = (s, r) => (r || document).querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const rich = s => esc(s).replace(/`([^`]+)`/g, "<code>$1</code>");
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const store = {
+  get(k) { try { return JSON.parse(localStorage.getItem(k) || "null"); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
+  del(k) { try { localStorage.removeItem(k); } catch (e) {} }
+};
+const PKEY = "linuxcheck-progress-v1";
+const LV = { 1: "하", 2: "중", 3: "상" };
+const LVNAME = { 1: "처음 시작", 2: "실습 확인", 3: "실무 판단" };
+const LVDESC = {
+  1: "리눅스를 처음 접했거나 가이드를 막 읽기 시작했다면. 명령어와 개념을 아는지 확인합니다.",
+  2: "가이드를 따라 실습해 봤다면. 명령어 결과를 읽고 알맞은 명령을 고르는지 확인합니다.",
+  3: "가이드를 끝까지 실습했다면. 침해 흔적·보안 설정 같은 실무 상황 판단을 확인합니다."
+};
+const LVEX = { 1: "pwd · sudo · /var/log", 2: "ss -tulnp · chmod 750 · grep -v", 3: "SUID · UID 0 · Failed→Accepted" };
+const toast = msg => { const t = $("#toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove("on"), 2200); };
+const domOf = id => DOMAINS.find(d => d.id === id);
+const fmtDur = s => { const m = Math.floor(s / 60), r = s % 60; return m ? m + "분 " + r + "초" : r + "초"; };
+const fmtDate = t => { const d = new Date(t); return d.getFullYear() + "." + String(d.getMonth() + 1).padStart(2, "0") + "." + String(d.getDate()).padStart(2, "0") + " " + String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0"); };
+function codeHtml(src) {
+  return src.split("\n").map(l => {
+    const m = l.match(/^(\S+@\S+?:[^$#]*[$#])(\s?)(.*)$/);
+    let body = m ? '<span class="p">' + esc(m[1]) + "</span>" + m[2] + esc(m[3]) : esc(l);
+    if (!m && /^(USER|Netid|tcp|udp)\b/.test(l)) body = '<span class="h">' + esc(l) + "</span>";
+    return body.replace(/(\s#\s.*)$/, '<span class="c">$1</span>');
+  }).join("\n");
+}
+
+/* 응시 순서: 영역을 번갈아 가며 */
+function levelQuestions(lv) {
+  const byD = {};
+  BANK.filter(q => q.lv === lv).forEach(q => (byD[q.d] = byD[q.d] || []).push(q));
+  const out = [];
+  for (let r = 0; r < 3; r++) DOMAINS.forEach(dm => { if (byD[dm.id] && byD[dm.id][r]) out.push(byD[dm.id][r]); });
+  return out;
+}
+const shuffle = n => { const a = [...Array(n).keys()]; for (let i = n - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+
+/* ── 결과 링크 ── */
+function hash(str) { let h = 2166136261 >>> 0; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h.toString(36); }
+function b64u(str) { const by = new TextEncoder().encode(str); let bin = ""; by.forEach(b => bin += String.fromCharCode(b)); return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""); }
+function unb64u(s) { s = s.replace(/-/g, "+").replace(/_/g, "/"); while (s.length % 4) s += "="; return new TextDecoder().decode(Uint8Array.from(atob(s), c => c.charCodeAt(0))); }
+function encodeResult(r) {
+  const body = JSON.stringify({ v: 1, n: r.name, c: r.tail || "", l: r.lv, d: r.date, a: r.ans, t: r.times, s: r.total });
+  return b64u(JSON.stringify({ p: body, h: hash(body + CONFIG.SALT) }));
+}
+function decodeResult(code) {
+  const o = JSON.parse(unb64u(code)); const p = JSON.parse(o.p);
+  return { name: p.n, tail: p.c, lv: p.l, date: p.d, ans: String(p.a).split(""), times: p.t, total: p.s, ok: o.h === hash(o.p + CONFIG.SALT) };
+}
+const baseUrl = () => location.href.split("#")[0];
+const resultLink = (code, staff) => baseUrl() + "#r=" + code + (staff ? "&s=1" : "");
+
+/* ── 채점 ── */
+function score(res) {
+  const items = levelQuestions(res.lv).map((q, i) => {
+    const ch = res.ans[i];
+    const st = ch === "u" ? "uk" : ch === "x" || ch == null ? "na" : (+ch === q.a ? "ok" : "no");
+    return { q, i, ch, st, t: res.times[i] || 0 };
+  });
+  const dom = DOMAINS.map(dm => {
+    const its = items.filter(x => x.q.d === dm.id);
+    const ok = its.filter(x => x.st === "ok").length;
+    const pct = its.length ? Math.round(ok / its.length * 100) : 0;
+    return { ...dm, ok, n: its.length, pct, band: pct >= 80 ? "high" : pct >= 50 ? "mid" : "low", items: its };
+  });
+  const c = st => items.filter(x => x.st === st).length;
+  const ok = c("ok");
+  return { items, dom, ok, no: c("no"), uk: c("uk") + c("na"), pct: Math.round(ok / items.length * 100), n: items.length };
+}
+const STAGES = ["입문 전", "입문", "기초", "실습 숙련", "실무 준비"];
+const STAGE_DESC = [
+  "리눅스의 기본 개념과 용어가 아직 낯선 단계입니다. 가이드를 처음부터 실습 서버에서 따라 하면 빠르게 올라갈 수 있습니다.",
+  "기본 개념은 접해 봤지만 혼자 명령어를 골라 쓰기는 어려운 단계입니다. 실습 서버에서 손으로 반복하는 것이 가장 빠른 길입니다.",
+  "기본 명령을 혼자 쓸 수 있는 단계입니다. 이제 명령어 결과를 읽고 해석하는 연습으로 넘어가면 됩니다.",
+  "명령어 결과를 읽고 상황을 판단할 수 있는 단계입니다. 침해 흔적·설정 점검 같은 보안 시나리오로 넓혀 가세요.",
+  "보안 상황에서 리눅스로 판단하고 대응하는 감각이 갖춰진 단계입니다. 자격증과 실전형 실습으로 증명할 차례입니다."
+];
+function stageOf(lv, pct) {
+  if (lv === 1) return pct < 40 ? 0 : pct < 75 ? 1 : 2;
+  if (lv === 2) return pct < 25 ? 0 : pct < 50 ? 1 : pct < 75 ? 2 : 3;
+  return pct < 25 ? 1 : pct < 50 ? 2 : pct < 75 ? 3 : 4;
+}
+function nextStep(lv, pct) {
+  if (lv === 1) return pct >= 80 ? ["중 난이도로 다시 진단", "하 난이도는 충분히 넘었습니다. 중 난이도에서 명령어 결과를 읽는 능력을 확인할 차례입니다."]
+    : ["복습 후 하 난이도 재응시", "아래 순서대로 약한 영역을 가이드로 먼저 실습하고, 2주 뒤 같은 난이도로 다시 응시해 변화를 확인하세요."];
+  if (lv === 2) return pct >= 80 ? ["상 난이도로 다시 진단", "실습 내용은 안정적입니다. 상 난이도에서 보안 시나리오 판단력을 확인해 보세요."]
+    : pct < 40 ? ["하 난이도부터 다시 진단", "중 난이도는 아직 부담이 큽니다. 하 난이도로 기본 개념을 먼저 확인하면 공부 순서가 더 명확해집니다."]
+    : ["약한 영역 보강 후 중 난이도 재응시", "기본기는 있습니다. 아래 영역을 가이드로 다시 실습한 뒤 재응시하세요."];
+  return pct >= 80 ? ["리눅스마스터 2급 · 정보보안기사 준비", "가이드 14장 종합 미션을 혼자 완수해 보고, 자격증 공부로 실력을 증명할 차례입니다."]
+    : pct < 40 ? ["중 난이도로 다시 진단", "상 난이도는 실무 시나리오 위주라 아직 이릅니다. 중 난이도로 정확한 위치를 먼저 확인하세요."]
+    : ["약한 영역 시나리오 보강", "기본기 위에 판단력을 쌓는 단계입니다. 아래 영역의 해설과 가이드의 SECURITY POINT를 중심으로 복습하세요."];
+}
+
+/* ── 테마 ── */
+const root = document.documentElement;
+const sysDark = matchMedia("(prefers-color-scheme: dark)");
+const savedTheme = store.get("linuxcheck-theme");
+if (savedTheme === "dark" || savedTheme === "light") root.setAttribute("data-theme", savedTheme);
+const isDark = () => { const t = root.getAttribute("data-theme"); return t ? t === "dark" : sysDark.matches; };
+function syncIcon() { $("#icoSun").hidden = !isDark(); $("#icoMoon").hidden = isDark(); }
+$("#themeBtn").addEventListener("click", () => { const n = isDark() ? "light" : "dark"; root.setAttribute("data-theme", n); store.set("linuxcheck-theme", n); syncIcon(); });
+sysDark.addEventListener && sysDark.addEventListener("change", syncIcon); syncIcon();
+
+/* ── 소개 화면 ── */
+let chosenLv = 1;
+function setLevel(lv) {
+  chosenLv = lv;
+  document.querySelectorAll("#levelSeg button").forEach(b => b.classList.toggle("on", +b.dataset.lv === lv));
+  document.querySelectorAll(".lvc").forEach(c => c.classList.toggle("on", +c.dataset.lv === lv));
+  $("#lvDesc").textContent = LVDESC[lv];
+}
+document.querySelectorAll("#levelSeg button").forEach(b => b.addEventListener("click", () => setLevel(+b.dataset.lv)));
+$("#lvCards").innerHTML = [1, 2, 3].map(lv =>
+  '<button type="button" class="glass lvc reveal" data-lv="' + lv + '"><div class="top2"><span class="big">' + LV[lv] + '</span><span class="lvdots">' + [1, 2, 3].map(k => '<i class="' + (k <= lv ? "on" : "") + '"></i>').join("") + "</span></div>" +
+  "<h4>" + LVNAME[lv] + "</h4><p>" + LVDESC[lv] + '</p><div class="ex">' + esc(LVEX[lv]) + "</div></button>").join("");
+document.querySelectorAll(".lvc").forEach(c => c.addEventListener("click", () => { setLevel(+c.dataset.lv); window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" }); setTimeout(() => $("#nameIn").focus(), reduce ? 0 : 500); }));
+setLevel(1);
+
+function introCells(ids, el) {
+  el.innerHTML = ids.map(id => { const d = domOf(id); return '<div class="cell"><span class="d"><span>0' + id + "</span><span>" + esc(d.ch) + '</span></span><span class="t">' + esc(d.name) + '</span><span class="bar"><i></i></span></div>'; }).join("");
+}
+introCells([1, 2, 3, 4], $("#introA")); introCells([5, 6, 7, 8], $("#introB"));
+function scopeRows(ids) {
+  return ids.map(id => { const d = domOf(id); return '<div class="srow"><span class="dy">' + esc(d.ch.replace("장", "")) + "장</span><span>" + esc(d.name) + '</span><span class="q">3문항</span></div>'; }).join("");
+}
+$("#scopeA").innerHTML = scopeRows([1, 2, 3, 4]); $("#scopeB").innerHTML = scopeRows([5, 6, 7, 8]);
+
+let litTimer = null;
+function runLights() {
+  const cells = [...document.querySelectorAll("#introA .cell, #introB .cell")];
+  if (reduce) { cells.forEach(c => c.classList.add("lit")); return; }
+  let i = 0; clearInterval(litTimer);
+  litTimer = setInterval(() => {
+    if (!$("#sIntro").classList.contains("on")) return;
+    if (i < cells.length) cells[i++].classList.add("lit");
+    else if (i < cells.length + 6) i++;
+    else { cells.forEach(c => c.classList.remove("lit")); i = 0; }
+  }, 420);
+}
+setTimeout(runLights, 900);
+
+const TERM = [
+  ["$ ", "whoami", "student", ""],
+  ["$ ", "ls -l /etc/shadow", "-rw-r----- 1 root shadow 1050 /etc/shadow", ""],
+  ["$ ", "sudo grep -c \"Failed password\" /var/log/auth.log", "37", "w"],
+  ["$ ", "sudo ss -tulnp | grep LISTEN", "tcp LISTEN 0.0.0.0:22  users:((\"sshd\"))", ""]
+];
+function runTerm() {
+  const el = $("#term");
+  const line = (p, c) => '<div><span class="p">student@lab:~' + esc(p) + "</span>" + esc(c);
+  if (reduce) { el.innerHTML = TERM.map(([p, c, o, w]) => line(p, c) + "</div>" + (o ? '<div class="' + (w || "o") + '">' + esc(o) + "</div>" : "")).join(""); return; }
+  let li = 0, ci = 0, html = "";
+  const tick = () => {
+    if (!$("#sIntro").classList.contains("on")) { setTimeout(tick, 600); return; }
+    if (li >= TERM.length) { setTimeout(() => { li = 0; ci = 0; html = ""; tick(); }, 2600); return; }
+    const [p, c, o, w] = TERM[li];
+    if (ci <= c.length) { el.innerHTML = html + line(p, c.slice(0, ci)) + '<span class="caret"></span></div>'; ci++; setTimeout(tick, 40 + Math.random() * 50); }
+    else { html += line(p, c) + "</div>" + (o ? '<div class="' + (w || "o") + '">' + esc(o) + "</div>" : ""); el.innerHTML = html + line(p, "") + '<span class="caret"></span></div>'; li++; ci = 0; setTimeout(tick, 700); }
+  };
+  tick();
+}
+runTerm();
+
+const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), { rootMargin: "0px 0px -8% 0px" });
+const observeReveals = scope => (scope || document).querySelectorAll(".reveal:not(.in)").forEach(el => io.observe(el));
+observeReveals();
+
+/* ── 화면 전환 ── */
+let S = null, timerId = null;
+function show(id) {
+  ["#sIntro", "#sExam", "#sResult", "#sAdmin"].forEach(s => $(s).classList.toggle("on", s === id));
+  document.body.classList.toggle("is-exam", id === "#sExam");
+  $("#timerPill").hidden = id !== "#sExam";
+  $("#statusPill").hidden = id === "#sExam" || id === "#sAdmin";
+  window.scrollTo({ top: 0, behavior: "instant" });
+  onScroll();
+}
+
+/* ── 응시 ── */
+function persist() { const c = { ...S }; delete c.qs; store.set(PKEY, c); }
+const saved = store.get(PKEY);
+if (saved && saved.ans && !saved.done) {
+  const b = $("#resumeBtn");
+  b.hidden = false;
+  b.textContent = "이어서 풀기 · " + saved.name + " · " + LV[saved.lv] + " · " + saved.ans.filter(a => a !== "x").length + "/" + saved.ans.length;
+  b.onclick = () => { S = saved; S.qs = levelQuestions(S.lv); startExam(); };
+}
+function begin() {
+  const name = $("#nameIn").value.trim();
+  if (!name) { $("#nameHint").textContent = "이름을 입력해 주세요."; $("#nameHint").classList.add("err"); $("#nameIn").focus(); return; }
+  const qs = levelQuestions(chosenLv);
+  S = { name, tail: $("#tailIn").value.replace(/\D/g, "").slice(0, 4), lv: chosenLv, ans: qs.map(() => "x"), times: qs.map(() => 0), perm: qs.map(q => shuffle(q.o.length)), cur: 0, start: Date.now() };
+  S.qs = qs; persist(); startExam();
+}
+$("#startForm").addEventListener("submit", e => { e.preventDefault(); begin(); });
+$("#nameIn").addEventListener("input", () => { $("#nameHint").classList.remove("err"); $("#nameHint").textContent = "연락처 뒤 4자리는 동명이인 구분용이며 입력하지 않아도 됩니다."; });
+$("#tailIn").addEventListener("input", e => { e.target.value = e.target.value.replace(/\D/g, "").slice(0, 4); });
+const goTop = () => { window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" }); setTimeout(() => $("#nameIn").focus(), reduce ? 0 : 500); };
+$("#closingStart").onclick = goTop; $("#dockStart").onclick = goTop;
+
+let tick = 0;
+function account() { const now = Date.now(); if (tick && S) S.times[S.cur] += Math.round((now - tick) / 1000); tick = now; }
+function startExam() {
+  $("#navgrid").innerHTML = S.qs.map((_, i) => '<button type="button" class="nav" data-i="' + i + '">' + (i + 1) + "</button>").join("");
+  $("#navgrid").querySelectorAll(".nav").forEach(b => b.onclick = () => go(+b.dataset.i));
+  renderConfirm(false);
+  show("#sExam");
+  clearInterval(timerId);
+  const upd = () => { const s = Math.floor((Date.now() - S.start) / 1000); $("#timerTxt").textContent = String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0"); };
+  upd(); timerId = setInterval(upd, 1000);
+  render();
+}
+function render() {
+  const q = S.qs[S.cur], i = S.cur, n = S.qs.length, a = S.ans[i];
+  $("#qcard").innerHTML = '<div class="qwrap"><div class="qmeta"><span class="qno">Q' + String(i + 1).padStart(2, "0") + '</span><span class="tag">' + esc(domOf(q.d).name) + '</span><span class="tag">가이드 ' + esc(domOf(q.d).ch) + '</span><span class="lvdots">' + [1, 2, 3].map(k => '<i class="' + (k <= S.lv ? "on" : "") + '"></i>').join("") + "&nbsp;" + LV[S.lv] + "</span></div>" +
+    '<p class="qtext">' + rich(q.q) + "</p>" + (q.code ? '<pre class="code">' + codeHtml(q.code) + "</pre>" : "") +
+    '<div class="opts">' + S.perm[i].map((oi, pos) => '<button type="button" class="opt' + (a === String(oi) ? " sel" : "") + '" data-o="' + oi + '"><span class="key">' + (pos + 1) + '</span><span class="txt">' + rich(q.o[oi]) + "</span></button>").join("") + "</div>" +
+    '<div class="qfoot"><button type="button" class="unk' + (a === "u" ? " on" : "") + '" id="unkBtn">모르겠어요</button><span class="kbd hide-s">1–4 선택 · 0 모르겠어요 · ← → 이동</span><span class="spacer"></span>' +
+    '<button type="button" class="btn sm" id="prevBtn"' + (i === 0 ? " disabled" : "") + ">이전</button>" +
+    '<button type="button" class="btn primary sm" id="nextBtn"' + (a === "x" ? " disabled" : "") + ">" + (i === n - 1 ? "제출하기" : "다음") + "</button></div></div>";
+  $("#qcard").querySelectorAll(".opt").forEach(b => b.onclick = () => pick(b.dataset.o));
+  $("#unkBtn").onclick = () => pick("u");
+  $("#prevBtn").onclick = () => go(i - 1);
+  $("#nextBtn").onclick = next;
+  const done = S.ans.filter(x => x !== "x").length;
+  $("#prog").style.width = (done / n * 100) + "%";
+  $("#answeredCnt").textContent = done + " / " + n;
+  $("#navgrid").querySelectorAll(".nav").forEach((b, k) => { b.className = "nav" + (S.ans[k] === "u" ? " unk" : S.ans[k] !== "x" ? " done" : "") + (k === i ? " cur" : ""); });
+  tick = Date.now();
+}
+let advT = 0;
+function pick(v) { account(); S.ans[S.cur] = v; persist(); render(); clearTimeout(advT); const at = S.cur; if (v !== "u" && at < S.qs.length - 1 && !reduce) advT = setTimeout(() => { if (S && !S.done && S.cur === at && S.ans[at] === v) go(at + 1); }, 260); }
+function go(i) { clearTimeout(advT); if (i < 0 || i >= S.qs.length) return; account(); S.cur = i; persist(); render(); }
+function next() {
+  if (S.ans[S.cur] === "x") return;
+  if (S.cur < S.qs.length - 1) return go(S.cur + 1);
+  renderConfirm(true);
+  if (innerWidth <= 1020) $("#confirmBox").scrollIntoView({ behavior: "smooth", block: "center" });
+}
+function renderConfirm(ask) {
+  const box = $("#confirmBox");
+  if (!ask) { box.innerHTML = '<button class="btn primary sm" type="button" id="submitBtn">답안 제출</button>'; $("#submitBtn").onclick = () => renderConfirm(true); return; }
+  const left = S.ans.map((a, k) => a === "x" ? k + 1 : null).filter(Boolean);
+  if (left.length) { box.innerHTML = "<span>아직 안 푼 문항이 있습니다: <b class=\"num\">" + left.join(", ") + "</b></span>" + '<div class="row"><button class="btn sm" type="button" id="toLeft">안 푼 문항으로</button></div>'; $("#toLeft").onclick = () => { go(left[0] - 1); renderConfirm(false); }; return; }
+  box.innerHTML = "<span>제출하면 답을 바꿀 수 없습니다.</span>" + '<div class="row"><button class="btn sm" type="button" id="cancelSub">계속 풀기</button><button class="btn primary sm" type="button" id="okSub">제출</button></div>';
+  $("#cancelSub").onclick = () => renderConfirm(false);
+  $("#okSub").onclick = finish;
+}
+document.addEventListener("keydown", e => {
+  if (!$("#sExam").classList.contains("on") || !S || /INPUT|TEXTAREA/.test(e.target.tagName)) return;
+  if (/^[1-4]$/.test(e.key)) { const p = S.perm[S.cur][+e.key - 1]; if (p != null) pick(String(p)); }
+  else if (e.key === "0") pick("u");
+  else if (e.key === "ArrowRight" || e.key === "Enter") { e.preventDefault(); next(); }
+  else if (e.key === "ArrowLeft") go(S.cur - 1);
+});
+function finish() {
+  account(); clearInterval(timerId);
+  const res = { name: S.name, tail: S.tail, lv: S.lv, date: Date.now(), ans: S.ans.join(""), times: S.times, total: Math.round((Date.now() - S.start) / 1000) };
+  S.done = true; store.del(PKEY);
+  const code = encodeResult(res);
+  sendWebhook(res, code);
+  history.replaceState(null, "", "#r=" + code);
+  renderResult(code, false, true);
+}
+
+/* ── 구글 시트 수집 (선택) ── */
+function sendWebhook(res, code) {
+  if (!CONFIG.WEBHOOK_URL) return;
+  const sc = score({ ...res, ans: res.ans.split("") });
+  const row = { date: new Date(res.date).toLocaleString("ko-KR"), name: res.name, tail: res.tail, level: LV[res.lv], score: sc.pct, correct: sc.ok + "/" + sc.n, unknown: sc.uk,
+    stage: STAGES[stageOf(res.lv, sc.pct)], minutes: Math.round(res.total / 60), domains: sc.dom.map(d => d.name + " " + d.pct).join(" | "),
+    weak: sc.dom.filter(d => d.band === "low").map(d => d.name).join(", "), link: resultLink(code, true) };
+  try { fetch(CONFIG.WEBHOOK_URL, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(row) }); } catch (e) {}
+}
+
+/* ── 결과 ── */
+const toneOf = b => b === "high" ? "g" : b === "mid" ? "m" : "b";
+function renderResult(code, staff, fresh) {
+  let res;
+  try { res = decodeResult(code); } catch (e) { show("#sAdmin"); $("#adminErr").textContent = "결과 링크를 읽을 수 없습니다. 링크가 중간에 잘리지 않았는지 확인하세요."; return; }
+  const sc = score(res), stg = stageOf(res.lv, sc.pct), nx = nextStep(res.lv, sc.pct);
+  const verdictTone = stg >= 3 ? "good" : stg >= 2 ? "mid" : "low";
+  const weakSorted = [...sc.dom].sort((a, b) => a.pct - b.pct || a.id - b.id);
+  const weak = weakSorted.filter(d => d.band !== "high");
+  $("#staffPill").hidden = !staff;
+
+  let h = "";
+  if (!res.ok) h += '<div class="warn">이 결과 링크는 원본과 내용이 달라졌을 수 있습니다(변조 의심). 다시 응시하게 하거나 원본 링크를 요청하세요.</div>';
+  h += '<section class="res-hero"><div class="ring" aria-hidden="true"><svg viewBox="0 0 120 120"><circle class="bg" cx="60" cy="60" r="52"/><circle class="fg" id="ringFg" cx="60" cy="60" r="52" stroke-dasharray="326.73" stroke-dashoffset="326.73"/></svg>' +
+    '<div class="center"><div class="score num"><span id="scoreNum">0</span><small>점</small></div><span class="label num">' + sc.ok + " / " + sc.n + " 정답</span></div></div>" +
+    '<div style="min-width:0"><span class="verdict ' + verdictTone + '">' + (stg + 1) + "단계 · " + STAGES[stg] + "</span>" +
+    "<h1>" + esc(res.name) + "님은 <span class=\"em\">" + STAGES[stg] + "</span> 단계입니다</h1>" +
+    "<p>" + STAGE_DESC[stg] + "</p>" +
+    '<div class="stage-track">' + STAGES.map((s, k) => '<div class="' + (k <= stg ? "on" : "") + (k === stg ? " cur" : "") + '"><i></i>' + s + "</div>").join("") + "</div>" +
+    '<div class="res-actions">' + (staff
+      ? '<button class="btn primary sm" type="button" id="printBtn">PDF로 저장</button><button class="btn sm" type="button" id="copyStaff">결과 링크 복사</button><button class="btn sm" type="button" id="openAdmin">다른 결과 열기</button>'
+      : '<button class="btn primary sm" type="button" id="copyBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>결과 링크 복사</button><button class="btn sm" type="button" id="toReview">해설 보기</button><button class="btn sm" type="button" id="retryBtn">다른 난이도 응시</button>') +
+    "</div></div></section>";
+  h += '<div class="stats"><div><span class="label">정답</span><b class="num g">' + sc.ok + '</b></div><div><span class="label">오답</span><b class="num b">' + sc.no + '</b></div><div><span class="label">모르겠어요</span><b class="num">' + sc.uk + '</b></div><div><span class="label">소요 시간 · 난이도 ' + LV[res.lv] + '</span><b class="num">' + Math.max(1, Math.round(res.total / 60)) + "<small>분</small></b></div></div>";
+
+  if (staff) h += staffHtml(res, sc, stg);
+
+  h += '<section><div class="sec-head"><div><div class="eyebrow"><span class="label">영역별 이해도</span></div><h2 class="h2">어느 <span class="em">영역</span>이 비어 있는지 보여 드립니다</h2></div>' +
+    "<p>칸 하나가 진단 영역 하나입니다. 초록은 3문항 모두 정답, 주황은 일부 정답, 빨강은 대부분 틀리거나 모르는 영역입니다.</p></div>" +
+    '<div class="glass res-map"><div class="map-row" style="margin-bottom:16px"><div class="rl"><b>기본기</b><span>' + sc.dom.slice(0, 4).reduce((s, d) => s + d.ok, 0) + ' / 12</span></div><div class="cells" id="resA"></div></div>' +
+    '<div class="map-row"><div class="rl"><b>보안 실무</b><span>' + sc.dom.slice(4).reduce((s, d) => s + d.ok, 0) + ' / 12</span></div><div class="cells" id="resB"></div></div></div>' +
+    '<div class="duo"><div class="glass"><h3>영역 균형</h3><div id="radarBox"></div></div><div class="glass"><h3>영역별 점수</h3><div class="units">' +
+    sc.dom.map(d => '<div class="unit"><span class="nm">' + esc(d.name) + "<small>가이드 " + esc(d.ch) + '</small></span><span class="mini"><i class="bg-' + toneOf(d.band) + '" data-w="' + d.pct + '"></i></span><span class="sc num ' + toneOf(d.band) + '">' + d.ok + "/" + d.n + "</span></div>").join("") +
+    "</div></div></div></section>";
+
+  h += '<section class="rec"><div class="glass"><h3>다음 단계</h3><p class="note"><b style="color:var(--fg)">' + esc(nx[0]) + "</b>\n" + esc(nx[1]) + "</p></div>" +
+    '<div class="glass"><h3>먼저 복습할 영역</h3><ol>' + (weak.length ? weak.slice(0, 4).map(d => '<li><span class="dy">' + esc(d.ch) + "</span><span>" + esc(d.name) + '</span><span class="num ' + toneOf(d.band) + '">' + d.pct + "%</span></li>").join("") : '<li class="empty" style="display:block">모든 영역이 강점입니다. 다음 난이도로 넘어가세요.</li>') + "</ol></div></section>";
+
+  h += '<section style="margin-top:38px"><div class="sec-head"><div><div class="eyebrow"><span class="label">상세 피드백</span></div><h2 class="h2">영역마다 <span class="em">무엇을</span> 하면 되는지</h2></div><p>약한 영역부터 순서대로 보여 드립니다. 체크 항목은 실습 서버에서 그대로 해 보면 됩니다.</p></div><div class="fbgrid">' +
+    weakSorted.map(d => {
+      const F = FEEDBACK[d.id]; const miss = d.items.filter(x => x.st !== "ok");
+      return '<div class="glass fb"><div class="h"><h3>' + esc(d.name) + '</h3><span class="num ' + toneOf(d.band) + '">' + (d.band === "high" ? "강점" : d.band === "mid" ? "보통" : "보강 필요") + " · " + d.pct + "%</span></div>" +
+        "<p>" + rich(F[d.band]) + "</p>" + (d.band !== "high" ? "<ul>" + F.todo.map(t => "<li>" + rich(t) + "</li>").join("") + "</ul>" : "") +
+        '<span class="miss">가이드 ' + esc(d.ch) + (miss.length ? " · 놓친 문항 " + miss.map(x => "Q" + String(x.i + 1).padStart(2, "0")).join(" ") : "") + "</span></div>";
+    }).join("") + "</div></section>";
+
+  if (!staff) h += '<section class="glass share"><div><h3>결과를 상담 선생님께 보내 주세요</h3><p>아래 링크 안에 결과가 담겨 있습니다. 카카오톡이나 문자로 보내면 선생님이 같은 결과지를 열어 볼 수 있습니다.' + (CONFIG.WEBHOOK_URL && fresh ? " 결과는 담당 선생님께 자동으로도 전달되었습니다." : "") + '</p><div class="linkbox"><input readonly id="shareLink" value="' + esc(resultLink(code, true)) + '"></div></div><button class="btn primary sm" type="button" id="copyBtn2">링크 복사</button></section>';
+
+  h += '<section id="reviewSec"><div class="review-head"><div><div class="eyebrow"><span class="label">문항 해설</span></div><h2 class="h2" style="font-size:clamp(24px,2.6vw,34px)">전 문항 <span class="em">해설</span></h2></div>' +
+    '<div class="seg" role="tablist"><button type="button" class="on" data-f="wrong">틀리거나 모른 문항</button><button type="button" data-f="all">전체</button></div></div><div class="rv" id="rv">' +
+    sc.items.map(x => {
+      const q = x.q; const mk = x.st === "ok" ? '<span class="mk ok">정답</span>' : x.st === "no" ? '<span class="mk no">오답</span>' : '<span class="mk uk">모르겠어요</span>';
+      const mine = x.st === "ok" || x.st === "no" ? rich(q.o[+x.ch]) : "모르겠어요";
+      return '<div class="glass rvi" data-st="' + x.st + '"><div class="rvi-top"><span class="qno">Q' + String(x.i + 1).padStart(2, "0") + "</span>" + mk + '<span class="tag">' + esc(domOf(q.d).name) + "</span></div>" +
+        "<h4>" + rich(q.q) + "</h4>" + (q.code ? '<pre class="code">' + codeHtml(q.code) + "</pre>" : "") +
+        '<div class="ans"><div><span>내 답</span><b class="' + (x.st === "ok" ? "g" : x.st === "no" ? "b" : "") + '" style="font-weight:500">' + mine + '</b></div><div><span>정답</span><b class="g" style="font-weight:500">' + rich(q.o[q.a]) + "</b></div></div>" +
+        '<p class="exp">' + rich(q.ex) + "</p></div>";
+    }).join("") + "</div></section>";
+
+  $("#resWrap").innerHTML = h;
+  const paint = (ids, el) => { el.innerHTML = ids.map(id => { const d = sc.dom[id - 1]; return '<div class="cell st-' + toneOf(d.band) + '" style="--w:' + Math.max(8, d.pct) + '%"><span class="d"><span>0' + id + "</span><span>" + d.ok + "/3</span></span><span class=\"t\">" + esc(d.name) + '</span><span class="bar"><i></i></span></div>'; }).join(""); };
+  paint([1, 2, 3, 4], $("#resA")); paint([5, 6, 7, 8], $("#resB"));
+  $("#radarBox").appendChild(radar(sc.dom));
+
+  const filt = f => document.querySelectorAll(".rvi").forEach(r => r.hidden = f === "wrong" && r.dataset.st === "ok");
+  document.querySelectorAll("#reviewSec .seg button").forEach(b => b.onclick = () => { document.querySelectorAll("#reviewSec .seg button").forEach(x => x.classList.toggle("on", x === b)); filt(b.dataset.f); });
+  filt(sc.ok === sc.n ? "all" : "wrong");
+  if (sc.ok === sc.n) document.querySelectorAll("#reviewSec .seg button").forEach(x => x.classList.toggle("on", x.dataset.f === "all"));
+
+  const copy = txt => { const done = () => toast("결과 링크를 복사했습니다"); if (navigator.clipboard && isSecureContext) navigator.clipboard.writeText(txt).then(done, () => fallbackCopy(txt, done)); else fallbackCopy(txt, done); };
+  const link = resultLink(code, true);
+  ["#copyBtn", "#copyBtn2", "#copyStaff"].forEach(id => { const b = $(id); if (b) b.onclick = () => copy(link); });
+  if ($("#toReview")) $("#toReview").onclick = () => $("#reviewSec").scrollIntoView({ behavior: reduce ? "auto" : "smooth" });
+  if ($("#printBtn")) $("#printBtn").onclick = () => { document.querySelectorAll(".rvi").forEach(r => r.hidden = false); window.print(); };
+  if ($("#retryBtn")) $("#retryBtn").onclick = () => { history.replaceState(null, "", baseUrl()); $("#nameIn").value = res.name; $("#tailIn").value = res.tail || ""; setLevel(res.lv < 3 ? res.lv + 1 : res.lv); show("#sIntro"); $("#staffPill").hidden = true; };
+  if ($("#openAdmin")) $("#openAdmin").onclick = () => { location.hash = "admin"; };
+
+  show("#sResult");
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    $("#ringFg").style.strokeDashoffset = 326.73 * (1 - sc.pct / 100);
+    document.querySelectorAll(".unit .mini i").forEach((b, k) => setTimeout(() => b.style.width = b.dataset.w + "%", 150 + k * 80));
+    const num = $("#scoreNum"), t0 = performance.now();
+    if (reduce) num.textContent = sc.pct;
+    else (function count(t) { const p = Math.min(1, (t - t0) / 1600), e = 1 - Math.pow(1 - p, 4); num.textContent = Math.round(sc.pct * e); if (p < 1) requestAnimationFrame(count); })(t0);
+    animateRadar(sc.dom);
+  }));
+}
+function fallbackCopy(txt, done) {
+  const ta = document.createElement("textarea"); ta.value = txt; ta.style.cssText = "position:fixed;left:-9999px"; document.body.appendChild(ta); ta.select();
+  try { document.execCommand("copy"); done(); } catch (e) { prompt("아래 링크를 복사하세요", txt); }
+  ta.remove();
+}
+
+/* 레이더 */
+let RAD = null;
+function radar(dom) {
+  const W = 420, H = 360, cx = W / 2, cy = H / 2 + 2, R = 118, n = dom.length;
+  const pt = (k, r) => { const a = -Math.PI / 2 + k * 2 * Math.PI / n; return [cx + r * Math.cos(a), cy + r * Math.sin(a)]; };
+  let s = '<svg class="radar" viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="영역별 점수 레이더 차트">';
+  [1 / 3, 2 / 3, 1].forEach(f => s += '<polygon class="grid" points="' + dom.map((_, k) => pt(k, R * f).join(",")).join(" ") + '"/>');
+  dom.forEach((d, k) => {
+    const [x, y] = pt(k, R); s += '<line class="ax" x1="' + cx + '" y1="' + cy + '" x2="' + x + '" y2="' + y + '"/>';
+    const [lx, ly] = pt(k, R + 20); const anchor = Math.abs(lx - cx) < 8 ? "middle" : lx > cx ? "start" : "end";
+    const parts = d.name.split("·");
+    s += '<text x="' + lx + '" y="' + (ly + 4 - (parts.length - 1) * 7) + '" text-anchor="' + anchor + '">' + parts.map((w, i) => '<tspan x="' + lx + '" dy="' + (i ? 14 : 0) + '">' + esc(w) + (i < parts.length - 1 ? "·" : "") + "</tspan>").join("") + "</text>";
+  });
+  s += '<polygon class="area" id="radarArea" points="' + dom.map(() => cx + "," + cy).join(" ") + '"/>' + dom.map((_, k) => '<circle class="pt" r="3.5" cx="' + cx + '" cy="' + cy + '"/>').join("") + "</svg>";
+  const w = document.createElement("div"); w.innerHTML = s; RAD = { pt, R }; return w.firstChild;
+}
+function animateRadar(dom) {
+  const area = $("#radarArea"), pts = document.querySelectorAll(".radar .pt"), t0 = performance.now();
+  (function f(t) {
+    const p = reduce ? 1 : Math.min(1, (t - t0) / 1400), e = 1 - Math.pow(1 - p, 4);
+    const P = dom.map((d, k) => RAD.pt(k, Math.max(4, RAD.R * d.pct / 100 * e)));
+    area.setAttribute("points", P.map(x => x.join(",")).join(" "));
+    pts.forEach((c, k) => { c.setAttribute("cx", P[k][0]); c.setAttribute("cy", P[k][1]); });
+    if (p < 1) requestAnimationFrame(f);
+  })(t0);
+}
+
+/* 상담자 분석 */
+function staffHtml(res, sc, stg) {
+  const fast = sc.items.filter(x => x.st === "no" && x.t > 0 && x.t < 6);
+  const avg = Math.round(res.total / sc.n), ukRate = Math.round(sc.uk / sc.n * 100);
+  const weak = sc.dom.filter(d => d.band === "low").map(d => d.name), strong = sc.dom.filter(d => d.band === "high").map(d => d.name);
+  const D = id => sc.dom[id - 1];
+  const P = [];
+  P.push("추정 단계 <b>" + (stg + 1) + "단계 · " + STAGES[stg] + "</b> — 난이도 " + LV[res.lv] + "에서 " + sc.pct + "점 (" + sc.ok + "/" + sc.n + ")" + (res.tail ? " · 연락처 뒤 4자리 " + esc(res.tail) : ""));
+  if (strong.length) P.push("강점 영역: <b>" + strong.join(", ") + "</b>");
+  if (weak.length) P.push("보강 필요 영역: <b>" + weak.join(", ") + "</b>");
+  if (ukRate >= 30) P.push("'모르겠어요' 비율 " + ukRate + "% — 모르는 것을 솔직하게 표시했습니다. 개념 학습 단계부터 안내하는 것이 적절합니다.");
+  else if (sc.uk === 0 && sc.no >= 8) P.push("'모르겠어요'를 한 번도 쓰지 않았는데 오답이 " + sc.no + "개입니다. 추측 응답이 섞였을 수 있어 실제 이해도는 점수와 다를 수 있습니다.");
+  if (fast.length >= 3) P.push("6초 안에 고른 오답이 <b>" + fast.length + "개</b>입니다 (" + fast.map(x => "Q" + (x.i + 1)).join(", ") + "). 문제를 충분히 읽지 않았거나 찍었을 수 있으니 한두 문항은 구두로 확인해 보세요.");
+  if (avg < 15) P.push("문항당 평균 " + avg + "초로 매우 빠릅니다. 응시 태도를 함께 확인하세요.");
+  if (res.lv === 1 && sc.pct >= 80) P.push("하 난이도는 충분합니다. <b>중 난이도 재측정</b>을 권하세요.");
+  if (res.lv === 2 && sc.pct >= 80) P.push("중 난이도가 안정적입니다. <b>상 난이도 재측정</b>을 권하세요.");
+  if (res.lv === 2 && sc.pct < 40) P.push("중 난이도가 버거운 상태입니다. <b>하 난이도로 재측정</b>하면 출발점이 더 정확해집니다.");
+  if (res.lv === 3 && sc.pct < 40) P.push("상 난이도는 아직 이릅니다. <b>중 난이도로 재측정</b>을 권하세요.");
+  if (D(3).band === "low" || D(7).band === "low") P.push("검색·파이프 또는 로그 분석이 약합니다. <b>보안관제·침해대응</b> 직무 희망 시 최우선 보강 영역입니다.");
+  if (D(4).band === "low") P.push("사용자·권한이 약합니다. <b>취약점 진단·컨설팅</b> 직무의 점검 항목 대부분이 이 영역입니다.");
+  if (D(6).band === "low") P.push("네트워크·SSH가 약합니다. 정보보안기사 등 다음 단계 공부 전에 네트워크 기초를 함께 다지도록 안내하세요.");
+
+  let t = '<section style="margin-bottom:56px"><div class="sec-head"><div><div class="eyebrow"><span class="label">상담 분석 · 학생 화면에는 보이지 않습니다</span></div><h2 class="h2">상담 때 <span class="em">짚을 곳</span></h2></div><p>점수만으로 보이지 않는 응답 태도와, 직무별로 먼저 채워야 할 영역을 정리했습니다.</p></div>' +
+    '<div class="glass staff"><ul>' + P.map(x => "<li>" + x + "</li>").join("") + "</ul></div>" +
+    '<div class="glass staff"><table class="qtable"><thead><tr><th>#</th><th>영역</th><th>결과</th><th class="hide-s">고른 답</th><th>소요</th></tr></thead><tbody>' +
+    sc.items.map(x => {
+      const mk = x.st === "ok" ? '<span class="mk ok">정답</span>' : x.st === "no" ? '<span class="mk no">오답</span>' : '<span class="mk uk">모름</span>';
+      const mine = x.st === "ok" || x.st === "no" ? rich(x.q.o[+x.ch]) : "모르겠어요";
+      return '<tr><td class="m">' + String(x.i + 1).padStart(2, "0") + "</td><td>" + esc(domOf(x.q.d).name) + "</td><td>" + mk + '</td><td class="hide-s">' + mine + '</td><td class="m">' + x.t + "s" + (x.st === "no" && x.t > 0 && x.t < 6 ? '<span class="fast">빠른 오답</span>' : "") + "</td></tr>";
+    }).join("") + "</tbody></table></div></section>";
+  return t;
+}
+
+/* ── 상담자: 결과 열기 ── */
+$("#adminOpen").onclick = () => {
+  const v = $("#adminIn").value.trim(); if (!v) return;
+  const m = v.match(/r=([A-Za-z0-9_\-]+)/);
+  $("#adminErr").textContent = "";
+  location.hash = "r=" + (m ? m[1] : v.replace(/\s/g, "")) + "&s=1";
+};
+$("#adminHome").onclick = () => { history.replaceState(null, "", baseUrl()); route(); };
+
+/* ── 스크롤 ── */
+let scrollY0 = 0;
+function onScroll() {
+  scrollY0 = window.scrollY || 0;
+  $("#top").classList.toggle("solid", scrollY0 > 12 || !$("#sIntro").classList.contains("on"));
+  const pastHero = scrollY0 > ($(".hero") ? $(".hero").offsetHeight : 600) * 0.75;
+  document.body.classList.toggle("dim", pastHero || $("#sResult").classList.contains("on") || $("#sAdmin").classList.contains("on"));
+  $("#dock").classList.toggle("on", pastHero && $("#sIntro").classList.contains("on"));
+}
+addEventListener("scroll", onScroll, { passive: true });
+
+/* ── 라우팅 ── */
+function route() {
+  const hsh = location.hash.slice(1), p = new URLSearchParams(hsh);
+  if (p.get("r")) return renderResult(p.get("r"), p.get("s") === "1", false);
+  $("#staffPill").hidden = hsh !== "admin";
+  if (hsh === "admin") return show("#sAdmin");
+  show("#sIntro");
+}
+addEventListener("hashchange", route);
+if (CONFIG.WEBHOOK_URL) $("#footHook").textContent = " (담당 선생님 결과 수집 시트로는 전송됩니다)";
+route();
+
+/* ── 배경: 두 가닥 리본 셰이더 (기본기 · 보안 실무) ── */
+(function stage() {
+  const cv = $("#stage");
+  const gl = cv.getContext("webgl", { antialias: false, premultipliedAlpha: false, alpha: false });
+  if (!gl) { cv.classList.add("fallback"); return; }
+  const vs = "attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}";
+  const fs = "precision mediump float;\n" +
+    "uniform vec2 r;uniform float t;uniform float s;uniform vec3 c1;uniform vec3 c2;uniform vec3 bg;\n" +
+    "float strand(vec2 p,float ph,float amp,float fr,float off){float y=off+amp*sin(p.x*fr+ph)+0.04*sin(p.x*fr*2.7-ph*1.4);float d=abs(p.y-y);return 0.0011/(d+0.0022);}\n" +
+    "void main(){vec2 uv=gl_FragCoord.xy/r;vec2 p=uv;p.x*=r.x/r.y;float tt=t*0.1+s*0.00045;vec3 col=vec3(0.);\n" +
+    "for(int i=0;i<16;i++){float k=float(i)/16.;\n" +
+    "col+=c1*strand(p,tt*2.0+k*1.4,0.14+0.06*k,1.6,0.56+0.07*sin(tt+k*3.0))*(0.25+0.75*k);\n" +
+    "col+=c2*strand(p,-tt*1.7+k*1.9+2.0,0.11+0.05*k,2.0,0.42+0.06*cos(tt*1.1+k*2.0))*(0.2+0.5*(1.0-k));}\n" +
+    "float side=smoothstep(0.0,0.9,uv.x);col*=mix(0.08,1.0,side*side);col=1.0-exp(-col*0.75);gl_FragColor=vec4(bg+col,1.0);}";
+  const sh = (type, src) => { const o = gl.createShader(type); gl.shaderSource(o, src); gl.compileShader(o); return gl.getShaderParameter(o, gl.COMPILE_STATUS) ? o : null; };
+  const v = sh(gl.VERTEX_SHADER, vs), f = sh(gl.FRAGMENT_SHADER, fs);
+  if (!v || !f) { cv.classList.add("fallback"); return; }
+  const pr = gl.createProgram(); gl.attachShader(pr, v); gl.attachShader(pr, f); gl.linkProgram(pr);
+  if (!gl.getProgramParameter(pr, gl.LINK_STATUS)) { cv.classList.add("fallback"); return; }
+  gl.useProgram(pr);
+  gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+  const loc = gl.getAttribLocation(pr, "p"); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+  const U = n => gl.getUniformLocation(pr, n), ur = U("r"), ut = U("t"), us = U("s");
+  gl.uniform3f(U("c1"), 1.0, 0.714, 0.282); gl.uniform3f(U("c2"), 0.357, 0.890, 0.769); gl.uniform3f(U("bg"), 0.039, 0.043, 0.035);
+  const DPR = 0.6;
+  function size() { const w = Math.max(1, Math.floor(innerWidth * DPR)), h = Math.max(1, Math.floor(innerHeight * DPR)); if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; gl.viewport(0, 0, w, h); } gl.uniform2f(ur, w, h); }
+  let raf = 0, smooth = 0; const t0 = performance.now();
+  function frame(now) { size(); smooth += (scrollY0 - smooth) * 0.06; gl.uniform1f(ut, (now - t0) / 1000); gl.uniform1f(us, smooth); gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4); raf = requestAnimationFrame(frame); }
+  if (reduce) { size(); gl.uniform1f(ut, 12.0); gl.uniform1f(us, 0); gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4); addEventListener("resize", () => { size(); gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4); }); return; }
+  raf = requestAnimationFrame(frame);
+  document.addEventListener("visibilitychange", () => { if (document.hidden) { cancelAnimationFrame(raf); raf = 0; } else if (!raf) raf = requestAnimationFrame(frame); });
+})();
+})();
+
+</script>
+</body>
+</html>
