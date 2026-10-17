@@ -11,6 +11,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="account.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" defer></script>
+  <script src="cloud-config.js" defer></script>
+  <script src="account.js" defer></script>
   <script src="lessons.js" defer></script>
   <script src="app.js" defer></script>
 </head>
@@ -50,7 +54,7 @@
       </div>
     </section>
     <section class="free-section" id="freePractice"><div class="free-copy"><div class="eyebrow free-eyebrow">✦ EXTRA PLAYGROUND</div><h2>문제 없이 자유롭게<br/>코딩하고 싶다면?</h2><p>배운 문법을 조합해서 마음껏 실험해 보세요. 실행 결과를 바로 확인할 수 있어요.</p><button class="button-primary" id="freeModeBtn">🧪 자유 실습 시작하기 →</button></div><div class="free-preview" aria-hidden="true"><span class="free-chip">PLAYGROUND</span><pre><span style="color:#c5b2ff">for</span> i <span style="color:#c5b2ff">in</span> range(1, 4):<br/>    print(<span style="color:#ffe083">"파이썬 최고!"</span> + <span style="color:#c5b2ff">str</span>(i))<br/><br/><span style="color:#92e8bf"># 무엇이든 만들어 보세요 ✨</span></pre></div></section>
-  </main><footer><span>PYTHON LAB <span class="footer-heart">♥</span> 매일 조금씩 성장하는 코딩 습관</span><span>Made for Python beginners · 학습 기록은 내 브라우저에 저장됩니다.</span></footer>
+  </main><footer><span>PYTHON LAB <span class="footer-heart">♥</span> 매일 조금씩 성장하는 코딩 습관</span><span>Made for Python beginners · 학습 계정 연동 시 내 기록은 클라우드에 안전하게 저장됩니다.</span></footer>
 </div>
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 <div class="modal-overlay" id="freeModal" hidden><div class="free-modal" role="dialog" aria-modal="true" aria-labelledby="freeModalTitle"><div class="free-modal-header"><div><span class="kicker">YOUR CODE, YOUR RULES</span><h2 id="freeModalTitle">🧪 자유 실습실</h2><p>원하는 파이썬 코드를 자유롭게 작성하고 실행해 보세요.</p></div><button id="closeFreeBtn" class="modal-close" aria-label="자유 실습실 닫기">×</button></div><div class="free-code-wrap"><textarea id="freeCode" aria-label="자유 실습 파이썬 코드" spellcheck="false" autocapitalize="off" rows="12"></textarea></div><div class="free-modal-actions"><span id="freeRunStatus">코드 작성 후 실행해 보세요.</span><button class="button-primary" id="freeRunBtn">▶ 코드 실행</button></div><pre id="freeOutput" class="free-output">실행 결과가 여기에 표시돼요.</pre><p class="free-modal-note">※ 첫 실행에는 Python 실행 환경을 불러오느라 시간이 걸릴 수 있어요. 인터넷 연결이 필요합니다.</p></div></div>
