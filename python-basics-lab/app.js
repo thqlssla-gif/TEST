@@ -3,12 +3,17 @@
   const { chapters, lessons } = STUDY_DATA;
   const $ = (id) => document.getElementById(id);
   const STORAGE = 'python-lab-v1';
-  const load = () => { try { return JSON.parse(localStorage.getItem(STORAGE)) || {}; } catch { return {}; } };
+  const CLOUD_MODE = Boolean(window.PyLabAccounts?.configured);
+  // 계정 모드에서는 공용 PC에 학생 코드나 성적을 남기지 않습니다.
+  const load = () => { if (CLOUD_MODE) return {}; try { return JSON.parse(localStorage.getItem(STORAGE)) || {}; } catch { return {}; } };
   const state = Object.assign({ solved: [], drafts: {}, freeCode: '# 여기에 자유롭게 파이썬 코드를 작성해 보세요\nfor n in range(1, 4):\n    print(f"파이썬 연습 {n}일 차!")\n', last: 1 }, load());
   if (!Array.isArray(state.solved)) state.solved = [];
   if (!state.drafts || typeof state.drafts !== 'object') state.drafts = {};
   let selected = 1, expanded = 0, worker = null, readyPromise = null, inflight = null, inflightId = 0, busy = false, toastTimer;
-  const save = () => { try { localStorage.setItem(STORAGE, JSON.stringify(state)); } catch (_) {} };
+  const save = ({ skipCloud = false } = {}) => {
+    if (CLOUD_MODE) { if (!skipCloud) window.PyLabAccounts?.queueSave(state); return; }
+    try { localStorage.setItem(STORAGE, JSON.stringify(state)); } catch (_) {}
+  };
   const current = () => lessons[selected - 1];
   function toast(message) { const el = $('toast'); el.textContent = message; el.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 2600); }
   function setStatus(text, type = '') { $('runtimeStatus').textContent = text; $('runtimeDot').className = 'runtime-dot ' + type; }
@@ -178,6 +183,21 @@
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('freeModal').hidden) closeFree(); });
   $('freeRunBtn').addEventListener('click', submitFree);
   window.addEventListener('hashchange', () => { const id = Number(location.hash.match(/^#lesson-(\d+)$/)?.[1]); if (id && id !== selected) navigate(id, false); });
+  // 인증된 학생으로 전환할 때 다른 사용자의 코드가 노출되지 않도록 전체 상태를 교체합니다.
+  window.PythonLab = {
+    applySnapshot(snapshot = {}) {
+      state.solved = Array.isArray(snapshot.solved) ? [...new Set(snapshot.solved.filter(n => Number.isInteger(n) && n >= 1 && n <= lessons.length))] : [];
+      state.drafts = snapshot.drafts && typeof snapshot.drafts === 'object' ? { ...snapshot.drafts } : {};
+      state.freeCode = typeof snapshot.freeCode === 'string' ? snapshot.freeCode : '';
+      state.last = Number(snapshot.last) || 1;
+      $('freeCode').value = state.freeCode;
+      $('freeOutput').textContent = '실행 결과가 여기에 표시돼요.';
+      updateProgress();
+      navigate(state.last, false);
+      save({ skipCloud: true });
+    },
+    getSnapshot() { return { solved: [...state.solved], drafts: { ...state.drafts }, freeCode: state.freeCode, last: state.last }; }
+  };
   updateProgress();
   const start = Number(location.hash.match(/^#lesson-(\d+)$/)?.[1]) || Number(state.last) || 1;
   navigate(start, !location.hash || location.hash.startsWith('#lesson-'));
