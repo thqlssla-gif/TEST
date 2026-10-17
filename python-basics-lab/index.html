@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#f7f7fc" />
+  <meta name="description" content="파이썬 왕초보를 위한 무료 온라인 연습장. 40개 기초 문법 문제를 직접 코딩하고 실행, 채점하고 학습 진도를 저장하세요." />
+  <title>PYTHON LAB — 코딩하며 배우는 파이썬</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%237b61e8'/%3E%3Ctext x='32' y='44' fill='white' font-size='35' font-family='Arial' font-weight='bold' text-anchor='middle'%3EP%3C/text%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <script src="lessons.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+<div class="site-shell">
+  <header class="topbar">
+    <a class="brand" href="#home" aria-label="파이썬 랩 홈"><span class="brand-mark">P<span class="brand-dot">.</span></span><span>PYTHON<span class="brand-light">LAB</span><small>PLAY · PRACTICE · PROGRESS</small></span></a>
+    <div class="top-right"><span class="top-badge"><span class="live-dot"></span> 무료 코딩 연습</span><button id="resetBtn" class="btn-plain" title="학습 진도 초기화">↻ <span>진도 초기화</span></button></div>
+  </header>
+
+  <main>
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-content"><div class="eyebrow"><span class="tiny-star">✦</span> BEGINNER FRIENDLY · PYTHON 3</div>
+        <h1 id="hero-title">파이썬, 읽기만 하지 말고<br/><em>직접 코딩해 보세요.</em></h1>
+        <p>기초 개념부터 실전 문제까지, 틀려도 괜찮아요.<br/>내 속도대로 한 문제씩 풀다 보면 어느새 실력이 쌓여요.</p>
+        <div class="hero-tags"><span>✍️ 코드 직접 작성</span><span>▶ 실제 파이썬 실행</span><span>✓ 자동 채점</span></div>
+      </div>
+      <div class="hero-graphic" aria-hidden="true"><div class="glow-orbit"></div><div class="floating-cube cube-left">{ }</div><div class="floating-cube cube-right">01</div><div class="hero-terminal"><div class="terminal-dots"><i></i><i></i><i></i><span>hello.py</span></div><code><span class="violet">name</span> = <span class="yellow">"Python"</span><br/><span class="violet">print</span>(<span class="yellow">"Hello, "</span> + name)<br/><br/><span class="muted">&gt; Hello, Python</span><span class="cursor">▋</span></code></div></div>
+    </section>
+
+    <section class="overview" aria-label="학습 현황"><div class="stat"><span class="stat-icon lilac">▦</span><div><strong id="chapterCount">10</strong><small>학습 챕터</small></div></div><div class="stat"><span class="stat-icon peach">⌘</span><div><strong id="lessonCount">40</strong><small>실습 문제</small></div></div><div class="stat"><span class="stat-icon mint">✓</span><div><strong id="completedCount">0</strong><small>완료한 문제</small></div></div><div class="overview-progress"><div class="overview-progress-head"><strong>나의 학습 진도</strong><span id="progressPercent">0%</span></div><div class="progress-track"><div class="progress-bar" id="progressBar"></div></div><p>정답을 맞히면 자동으로 기록돼요 ✨</p></div></section>
+
+    <section class="workspace" id="practice">
+      <aside class="sidebar" aria-label="학습 목차"><div class="sidebar-header"><div><span class="kicker">YOUR ROADMAP</span><h2>학습 커리큘럼</h2></div><button id="sidebarToggle" class="sidebar-toggle" aria-expanded="false" aria-controls="chapterList">목차 보기 <span>⌄</span></button></div><div id="chapterList" class="chapter-list"></div><div class="aside-tip"><span class="aside-tip-icon">💡</span><div><strong>공부 TIP</strong><p>정답을 바로 보기보다 먼저 코드를 직접 작성해 보세요!</p></div></div></aside>
+
+      <div class="learning-area" id="learningArea"><div class="lesson-meta"><div class="breadcrumbs"><span>PYTHON BASIC</span><span class="crumb-sep">/</span><span id="breadcrumbChapter">시작하기</span><span class="crumb-sep">/</span><strong id="breadcrumbLesson">첫 번째 문제</strong></div><span id="difficulty" class="difficulty">입문</span></div>
+        <div class="lesson-heading"><div><span class="lesson-number" id="lessonNumber">LESSON 01</span><h2 id="lessonTitle">화면에 출력하기</h2><p id="lessonDescription">코드를 작성해 보세요.</p></div><div class="lesson-illustration" aria-hidden="true">&lt;/&gt;</div></div>
+        <div class="concept-card"><div class="card-head"><div class="card-heading"><span class="mini-icon">📖</span><h3>핵심 개념</h3></div><span class="head-note">CONCEPT NOTE</span></div><p id="conceptText"></p><div class="concept-example"><div class="example-head"><span>✦ EXAMPLE</span><button id="copyExampleBtn" class="copy-btn" title="예제 코드 복사">⧉ 복사</button></div><pre><code id="exampleCode"></code></pre></div></div>
+        <div class="challenge-card"><div class="challenge-top"><div class="challenge-title"><span class="challenge-emoji">🎯</span><div><span class="card-eyebrow">TODAY'S CHALLENGE</span><h3>직접 풀어보기</h3></div></div><span class="challenge-points">+10 XP</span></div><p id="challengeText"></p><div id="successMark" class="success-mark" hidden>✓ 해결한 문제예요! 다른 방법으로도 풀어보세요.</div></div>
+
+        <div class="editor-card"><div class="editor-header"><div class="editor-label"><span class="code-badge">PY</span><span>main.py</span><span class="unsaved-tag" id="saveStatus">자동 저장</span></div><div class="editor-actions"><button id="restoreBtn" title="시작 코드로 되돌리기">↺ 초기 코드</button><button id="answerBtn" title="모범 답안 보기">⌁ 정답 보기</button></div></div><div class="code-editor-wrap"><div class="line-numbers" id="lineNumbers" aria-hidden="true">1</div><textarea id="codeInput" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="파이썬 코드를 작성하는 편집기" placeholder="# 이곳에 코드를 입력하세요" rows="10"></textarea></div><div class="editor-footer"><div class="runtime"><span id="runtimeDot" class="runtime-dot"></span><span id="runtimeStatus">코드 실행 준비됨</span></div><div class="run-actions"><button id="runBtn" class="button-secondary"><span>▶</span> 실행하기</button><button id="gradeBtn" class="button-primary">✓ 정답 확인</button></div></div></div>
+
+        <div class="result-card" aria-live="polite"><div class="result-header"><div class="card-heading"><span class="mini-icon">💻</span><h3>실행 결과</h3></div><span id="resultBadge" class="result-badge">OUTPUT</span></div><div class="output-body"><pre id="outputText">▶ 실행하기를 누르면 결과가 여기에 표시돼요.</pre></div><div id="testResults" class="test-results" hidden></div></div>
+
+        <div class="help-strip"><button id="hintBtn">💡 힌트 보기 <span>⌄</span></button><div id="hintText" class="help-content" hidden></div><div id="answerText" class="answer-content" hidden><div class="answer-title">참고 답안 · 여러 정답 중 하나예요</div><pre><code id="solutionCode"></code></pre><button id="copyAnswerBtn" class="copy-btn">⧉ 답안 복사</button></div></div>
+        <div class="lesson-nav"><button id="prevBtn" class="nav-button">← 이전 문제</button><span id="lessonPosition">1 / 40</span><button id="nextBtn" class="nav-button nav-next">다음 문제 →</button></div>
+      </div>
+    </section>
+    <section class="free-section" id="freePractice"><div class="free-copy"><div class="eyebrow free-eyebrow">✦ EXTRA PLAYGROUND</div><h2>문제 없이 자유롭게<br/>코딩하고 싶다면?</h2><p>배운 문법을 조합해서 마음껏 실험해 보세요. 실행 결과를 바로 확인할 수 있어요.</p><button class="button-primary" id="freeModeBtn">🧪 자유 실습 시작하기 →</button></div><div class="free-preview" aria-hidden="true"><span class="free-chip">PLAYGROUND</span><pre><span style="color:#c5b2ff">for</span> i <span style="color:#c5b2ff">in</span> range(1, 4):<br/>    print(<span style="color:#ffe083">"파이썬 최고!"</span> + <span style="color:#c5b2ff">str</span>(i))<br/><br/><span style="color:#92e8bf"># 무엇이든 만들어 보세요 ✨</span></pre></div></section>
+  </main><footer><span>PYTHON LAB <span class="footer-heart">♥</span> 매일 조금씩 성장하는 코딩 습관</span><span>Made for Python beginners · 학습 기록은 내 브라우저에 저장됩니다.</span></footer>
+</div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<div class="modal-overlay" id="freeModal" hidden><div class="free-modal" role="dialog" aria-modal="true" aria-labelledby="freeModalTitle"><div class="free-modal-header"><div><span class="kicker">YOUR CODE, YOUR RULES</span><h2 id="freeModalTitle">🧪 자유 실습실</h2><p>원하는 파이썬 코드를 자유롭게 작성하고 실행해 보세요.</p></div><button id="closeFreeBtn" class="modal-close" aria-label="자유 실습실 닫기">×</button></div><div class="free-code-wrap"><textarea id="freeCode" aria-label="자유 실습 파이썬 코드" spellcheck="false" autocapitalize="off" rows="12"></textarea></div><div class="free-modal-actions"><span id="freeRunStatus">코드 작성 후 실행해 보세요.</span><button class="button-primary" id="freeRunBtn">▶ 코드 실행</button></div><pre id="freeOutput" class="free-output">실행 결과가 여기에 표시돼요.</pre><p class="free-modal-note">※ 첫 실행에는 Python 실행 환경을 불러오느라 시간이 걸릴 수 있어요. 인터넷 연결이 필요합니다.</p></div></div>
+</body>
+</html>
