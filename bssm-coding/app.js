@@ -74,10 +74,10 @@ function exportData(){const data=JSON.stringify({exportedAt:new Date().toISOStri
 function runnerReset(){if(runner)runner.terminate();runner=null;runnerReady=false;runnerBusy=false;clearTimeout(runnerTimer)}
 function runCode(){const s=getSession();if(!s||runnerBusy)return;const q=MAP[s.ids[s.idx]];if(q.type!=="code")return;const code=(s.answers[q.id]||"").trim();if(!code){toast("먼저 코드를 작성해 주세요.");return}
 runnerBusy=true;runMessage="Python 실행 환경을 준비하고 있습니다. 최초 실행 시 인터넷 다운로드가 필요합니다.";render();const requestId=++currentRun;
-try{if(!runner){runner=new Worker("./runner.js");runnerReady=false;runner.onmessage=ev=>{const d=ev.data||{};if(d.kind==="loaded"){runnerReady=true;clearTimeout(runnerTimer);runnerTimer=setTimeout(()=>{runnerReset();runMessage="코드 실행 시간이 초과되었습니다. 무한 반복문이 있는지 확인해 주세요.";render()},14000);return}
+try{if(!runner){runner=new Worker("./runner.js");runnerReady=false;}runner.onmessage=ev=>{const d=ev.data||{};if(d.kind==="loaded"){runnerReady=true;clearTimeout(runnerTimer);runnerTimer=setTimeout(()=>{runnerReset();runMessage="코드 실행 시간이 초과되었습니다. 무한 반복문이 있는지 확인해 주세요.";render()},14000);return}
 if(d.requestId!==requestId)return;if(d.kind==="error"){runnerReset();runMessage="실행 실패: "+h(d.message||"실행 환경을 불러올 수 없습니다.");render();return}
 if(d.kind==="result"){runnerBusy=false;clearTimeout(runnerTimer);const same=db.session&&db.session.ids.includes(q.id)&&(db.session.answers[q.id]||"").trim()===code;if(same){db.session.checks[q.id]={ok:d.allPassed,passed:d.passed,total:d.total};save()}const firstBad=d.rows.find(x=>!x.ok);runMessage='<b>'+(d.allPassed?"모든 테스트를 통과했습니다!":"테스트 "+d.passed+"/"+d.total+" 통과")+'</b>'+(firstBad?'<p style="margin:8px 0 0">입력: <code>'+h(firstBad.input)+'</code></p><p style="margin:4px 0">예상: <code>'+h(firstBad.expected)+'</code></p><p style="margin:4px 0">실제: <code>'+h(firstBad.actual)+'</code></p>'+(firstBad.error?'<pre>'+h(firstBad.error)+'</pre>':""):"");render()}}
-runner.onerror=e=>{runnerReset();runMessage="Python 실행 파일을 불러오지 못했습니다. 인터넷 연결을 확인하세요.";render()}}
+runner.onerror=e=>{runnerReset();runMessage="Python 실행 파일을 불러오지 못했습니다. 인터넷 연결을 확인하세요.";render()}
 clearTimeout(runnerTimer);runnerTimer=setTimeout(()=>{runnerReset();runMessage="Python 엔진을 불러오는 데 실패했거나 시간이 초과되었습니다. 인터넷을 확인해 주세요.";render()},45000);
 runner.postMessage({type:"run",requestId,source:code,cases:q.cases});
 }catch(e){runnerReset();runMessage="이 브라우저에서는 코드 실행을 시작하지 못했습니다.";render()}}
