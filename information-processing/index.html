@@ -10,7 +10,7 @@
 "use strict";
 const ALL=BANK,PR=PRACTICAL,STORE="itpe_study_v1",names26=["소프트웨어 설계","소프트웨어 개발","데이터베이스 구축","프로그래밍 언어 활용","정보시스템 구축관리"],names27=["소프트웨어 개발","데이터베이스 구축","프로그래밍 언어 활용","정보시스템 구축관리"],byId=Object.fromEntries(ALL.concat(PR).map(x=>[x.id,x]));
 let db;try{db=JSON.parse(localStorage.getItem(STORE))||{}}catch(e){db={}}db.history=Array.isArray(db.history)?db.history:[];db.mistakes=db.mistakes||{};db.bookmarks=Array.isArray(db.bookmarks)?db.bookmarks:[];db.year=db.year===2026?2026:2027;db.mode=db.mode==="practical"?"practical":"written";db.session=db.session||null;db.last=db.last||null;
-let page=db.session?"quiz":"home",mobile=false,search="",filter="all",historyMode="all",setupKind="full",setupCount=20,setupSubject="all",questionPage=0,secLeft=0,clockHandle=null;
+let page=db.session?"quiz":"home",mobile=false,search="",filter="all",historyMode="all",setupKind="full",setupCount=20,setupSubject="0",questionPage=0,secLeft=0,clockHandle=null;
 const el=id=>document.getElementById(id);
 const h=s=>String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
 const fmt=s=>h(s).replace(/(\b(?:SELECT|FROM|WHERE|JOIN|ORDER BY|GROUP BY|HAVING|COUNT|COMMIT|ROLLBACK|CREATE TABLE)\b)/g,"<code>$1</code>");
