@@ -16,7 +16,7 @@ const h=s=>String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").repla
 const fmt=s=>h(s).replace(/(\b(?:SELECT|FROM|WHERE|JOIN|ORDER BY|GROUP BY|HAVING|COUNT|COMMIT|ROLLBACK|CREATE TABLE)\b)/g,"<code>$1</code>");
 const save=()=>{try{localStorage.setItem(STORE,JSON.stringify(db))}catch(e){toast("브라우저 저장공간이 부족합니다.")}};
 const names=()=>db.year===2027?names27:names26;
-const group27=x=>x.topic==="방법론"?0:x.old===1&&(x.topic==="자료구조"||x.topic==="알고리즘")?2:group27(x);
+const group27=x=>x.topic==="방법론"?0:x.old===1&&(x.topic==="자료구조"||x.topic==="알고리즘")?2:(x.old<2?0:x.old-1);
 const subj=x=>db.year===2027?group27(x):x.old;
 const shuffle=a=>{const b=a.slice();for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]]}return b};
 const pick=(a,n)=>shuffle(a).slice(0,n);
