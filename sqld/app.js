@@ -2,7 +2,7 @@
 (function(){
 "use strict";
 const SUBJECTS=["데이터 모델링의 이해","SQL 기본 및 활용"];
-const BANK=[...(window.SQLD_MODEL_QUESTIONS||[]),...(window.SQLD_BASIC_QUESTIONS||[]),...(window.SQLD_RESULTS_QUESTIONS||[])];
+const BANK=[...(window.SQLD_MODEL_QUESTIONS||[]),...(window.SQLD_BASIC_QUESTIONS||[]),...(window.SQLD_RESULTS_QUESTIONS||[])].map(q=>({...q,answer:q.correct}));
 const NOTES=window.SQLD_NOTES||[];
 const MAP=Object.fromEntries(BANK.map(x=>[x.id,x]));
 const STORE="sqld_study_lab_v1";
