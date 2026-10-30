@@ -1,0 +1,150 @@
+/* SQLD STUDY LAB - 비공식 예상문항 학습 도구 */
+(function(){
+"use strict";
+const SUBJECTS=["데이터 모델링의 이해","SQL 기본 및 활용"];
+const BANK=[...(window.SQLD_MODEL_QUESTIONS||[]),...(window.SQLD_BASIC_QUESTIONS||[]),...(window.SQLD_RESULTS_QUESTIONS||[])];
+const NOTES=window.SQLD_NOTES||[];
+const MAP=Object.fromEntries(BANK.map(x=>[x.id,x]));
+const STORE="sqld_study_lab_v1";
+const EMPTY=()=>({history:[],mistakes:{},bookmarks:[],session:null,last:null});
+let db;try{db=JSON.parse(localStorage.getItem(STORE))||EMPTY()}catch(err){db=EMPTY()}
+db.history=Array.isArray(db.history)?db.history:[];db.mistakes=db.mistakes||{};db.bookmarks=Array.isArray(db.bookmarks)?db.bookmarks:[];db.session=db.session||null;
+let page=db.session?"quiz":"home",mobile=false,setupMode="full",setupSubject="0",search="",bankSubject="all",bankTopic="all",bankLevel="all",bankPage=0,noteSubject="all",noteSearch="",flashIndex=0,flashFlip=false,historyMode="all",toastTimer=null,interval=null;
+const el=id=>document.getElementById(id);
+const h=x=>String(x==null?"":x).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+const save=()=>{try{localStorage.setItem(STORE,JSON.stringify(db))}catch(e){toast("저장 공간이 부족해 기록이 저장되지 않았습니다.")}};
+const tag=(s,cl="")=>'<span class="chip '+cl+'">'+h(s)+'</span>';
+const btn=(txt,action,cl="",ext="")=>'<button class="btn '+cl+'" data-action="'+action+'" '+ext+'>'+txt+'</button>';
+const H=(k,t,d)=>'<div class="eyebrow">'+h(k)+'</div><h1 class="heading">'+h(t)+'</h1><p class="sub">'+d+'</p>';
+const bar=n=>'<div class="bar"><span style="width:'+Math.max(0,Math.min(100,n||0))+'%"></span></div>';
+const stat=(label,v,u)=>'<div class="stat"><div class="label">'+h(label)+'</div><strong>'+v+'<small>'+h(u||"")+'</small></strong></div>';
+const has=id=>Object.prototype.hasOwnProperty.call(db.session?.answers||{},id);
+const answered=(s,id)=>Object.prototype.hasOwnProperty.call(s.answers,id);
+const score=entries=>entries.filter(e=>e.ok).length;
+const subParts=[10,40];
+const trapPool=()=>BANK.filter(q=>q.level===3 || (q.level===2&&["NULL","JOIN","GROUP BY","윈도 함수","정규화","서브쿼리","SQL 결과","JOIN 결과"].includes(q.topic)));
+const selectFew=(arr,n)=>arr.slice(0,Math.min(n,arr.length));
+const shuffle=(arr,random=Math.random)=>{const x=arr.slice();for(let i=x.length-1;i>0;i--){let j=Math.floor(random()*(i+1));[x[i],x[j]]=[x[j],x[i]]}return x};
+function orderFor(q,seed){let hash=seed>>>0;for(let i=0;i<q.id.length;i++)hash=Math.imul(hash^q.id.charCodeAt(i),16777619)>>>0;const random=()=>{hash+=0x6d2b79f5;let t=hash;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return ((t^t>>>14)>>>0)/4294967296};return shuffle([0,1,2,3],random)}
+function toast(message){const t=el("toast");if(!t)return;t.textContent=message;t.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove("show"),2700)}
+const NAV=[["home","학습 대시보드","⌂"],["exam","실전 모의고사","▣"],["topics","과목별 연습","◫"],["bank","전체 문제은행","▤"],["trap","함정문제 집중","⚑"],["wrong","오답노트","↺"],["bookmarks","북마크","☆"],["notes","핵심 개념노트","☰"],["formula","SQL 문법 암기","⌘"],["history","학습 기록","▥"],["guide","시험 안내","ⓘ"]];
+function side(){return '<div class="brand"><div class="brand-mark">S<span style="font-size:13px">Q</span></div><div><strong>SQLD STUDY LAB</strong><small>SQL DEVELOPER CERT</small></div></div><div class="navtitle">MY STUDY DESK</div>'+NAV.map(([key,label,icon])=>'<button class="navbtn '+(page===key?"on":"")+'" data-action="nav" data-page="'+key+'"><span class="navicon">'+icon+'</span>'+label+(key==="wrong"&&Object.keys(db.mistakes).length?'<span class="sidebadge">'+Object.keys(db.mistakes).length+'</span>':"")+'</button>').join("")+'<a class="navbtn" href="./lab.html" style="text-decoration:none;background:#f1edff;color:#6b58c2;border:1px solid #e6def9"><span class="navicon">⌨</span>SQL 직접 실행 실습</a><div class="sidefoot"><strong>🔒 학생별 학습 공간</strong><p>진도와 오답은 현재 브라우저에만 저장됩니다. 각자의 기기로 같은 링크를 이용하면 기록이 섞이지 않습니다.</p></div>'}
+function route(p){page=p;mobile=false;bankPage=0;render();if(window.scrollTo)window.scrollTo(0,0)}
+function render(){const names=Object.fromEntries(NAV.map(n=>[n[0],n[1]]));names.quiz="문제 풀이";names.result="성적표";
+el("root").innerHTML='<div class="overlay '+(mobile?"open":"")+'" data-action="close-menu"></div><div class="app"><aside class="side '+(mobile?"open":"")+'">'+side()+'</aside><div class="page"><header class="topbar"><div style="display:flex;align-items:center;gap:12px"><button class="hamburger" data-action="menu" aria-label="메뉴 열기">☰</button><span class="crumb">SQLD STUDY LAB / '+h(names[page])+'</span><b style="font-size:13px" class="mobile-label">SQLD STUDY LAB</b></div><div class="topright">'+tag("2과목 · 50문항")+tag("비공식 연습","gray")+'<span class="avatar">AD</span></div></header><main class="main">'+view()+'<footer class="footer">SQLD STUDY LAB · 자체 제작 비공식 예상문제 · 시행기관 공식 기출 및 공식 문제은행이 아닙니다.<br>학습 기록은 이 브라우저에만 저장됩니다. <a href="https://www.dataq.or.kr/" target="_blank" rel="noopener noreferrer">데이터자격검정 공식 사이트 ↗</a></footer></main></div></div>';
+if(page==="quiz")timer();else clearInterval(interval)}
+function view(){return ({home,exam,topics,bank,trap,wrong:()=>collection("wrong"),bookmarks:()=>collection("bookmarks"),notes,formula,history,guide,quiz,result}[page]||home)()}
+const historyOf=id=>db.history.reduce((sum,r)=>sum+r.entries.filter(x=>x.id===id).length,0);
+function fresh(pool,n){return selectFew(shuffle(pool).sort((a,b)=>historyOf(a.id)-historyOf(b.id)),n)}
+function subjectSummary(){return SUBJECTS.map((name,i)=>{const items=BANK.filter(x=>x.subject===i),done=items.filter(x=>historyOf(x.id)).length,last=db.history.findLast?.(r=>r.kind==="full")||null;return{name,items:items.length,done,last}})}
+function home(){const hist=db.history,done=new Set(hist.flatMap(r=>r.entries.map(x=>x.id))),best=hist.length?Math.max(...hist.map(x=>x.rate)):0;
+return H("MY CERTIFICATION DESK","ADsP SQL 개발자","기초 개념부터 통계 계산, 실전 90분 모의고사까지. 과목별로 점검하고 틀린 문제를 반복하세요.")+
+'<div class="notice"><strong>시험 대비 안내</strong><p>현재 안내되는 시험 구성: 객관식 50문항 · 90분 · 2과목 · 60점 이상 및 과목별 40% 미만 과락. 이 사이트의 188문항은 기출 원문이 아닌 자체 제작 예상문제입니다.</p></div>'+
+'<div class="grid stats">'+stat("누적 학습 횟수",hist.length,"회")+stat("최고 정답률",best,"%")+stat("학습한 고유 문항",done.size,"문항")+stat("오답노트",Object.keys(db.mistakes).length,"문항")+'</div>'+
+'<div class="grid feature-grid"><section class="tile"><div class="row"><div class="tileicon">▣</div>'+tag("90분 실전")+'</div><h2>ADsP 실전 모의고사</h2><p>실제 시험 안내와 같은 과목별 10·10·30문항 비율로 출제하고 과락까지 계산합니다.</p>'+btn("50문항 실전 시작 →","start-full","primary")+'</section><section class="tile pink"><div class="row"><div class="tileicon">∑</div>'+tag("계산·함정 대비")+'</div><h2>통계 공식과 함정문제</h2><p>가설검정·정밀도·재현율·지지도 계산과 혼동하기 쉬운 개념을 반복하세요.</p>'+btn("함정문제 연습하기 →","nav","",'data-page="trap"')+'</section></div>'+
+'<div class="grid two" style="margin-top:16px"><section class="panel"><div class="row"><h3 style="margin:0">과목별 풀이 현황</h3>'+tag(BANK.length+"문항 문제은행","gray")+'</div>'+
+subjectSummary().map((s,i)=>'<div class="subjectline"><div class="row"><span>'+h(s.name)+'</span><strong>'+s.done+' / '+s.items+'문항</strong></div>'+bar(Math.round(100*s.done/s.items))+'</div>').join("")+
+'</section><section class="panel"><h3>추천 학습 루틴</h3><div class="steps">'+["1과목 데이터 유형과 DIKW 개념 정리","2과목 방법론·거버넌스 핵심 암기","3과목 통계 공식 및 계산 연습","모의고사 후 과락 과목부터 집중 복습"].map((x,i)=>'<div class="step"><b>'+(i+1)+'</b><span>'+x+'</span></div>').join("")+'</div><div class="notice" style="margin-top:18px"><strong>처음 공부하는 학생이라면</strong><p>개념노트 → 과목별 10문제 → 함정문제 → 90분 모의고사 순서로 활용하세요.</p></div>'+btn("핵심 개념노트 열기 →","nav","small",'data-page="notes" style="margin-top:13px"')+'</section></div>'}
+function exam(){const options=[["full","실전 모의고사","50문항 · 90분 · 과락 판정"],["quick","빠른 20문제","전체 과목 혼합 · 25분"],["subject","과목별 10문제","한 과목만 집중 연습"],["trap","함정문제 15개","고난도·개념 함정 집중"]];return H("EXAM SIMULATOR","모의고사 설정","학습 목적에 맞는 모드를 선택하세요. 제출 전에는 정답과 해설이 공개되지 않습니다.")+
+'<div class="grid two"><section class="panel"><div class="label" style="margin-top:0">연습 방식</div><div class="choiceset">'+options.map(x=>'<button class="choicecard '+(setupMode===x[0]?"on":"")+'" data-action="setup-mode" data-mode="'+x[0]+'"><b>'+x[1]+'</b><small>'+x[2]+'</small></button>').join("")+'</div>'+
+(setupMode==="subject"?'<label class="label" for="subject-sel">집중할 과목</label><select id="subject-sel" class="select">'+SUBJECTS.map((n,i)=>'<option value="'+i+'" '+(setupSubject===String(i)?"selected":"")+'>'+h(n)+'</option>').join("")+'</select>':"")+
+'<div style="margin-top:23px">'+btn("연습 시작 →","start-setup","primary full")+'</div></section>'+
+'<aside class="panel"><h3>시험 진행 방식</h3><div class="steps">'+["실전: 1과목 10·2과목 40문항","문항당 2점 · 총점 100점","60점 이상 + 각 과목 40% 이상","미응답 문항도 오답으로 처리","제출 후 전체 정답과 상세 해설 공개"].map((t,i)=>'<div class="step"><b>'+(i+1)+'</b><span>'+t+'</span></div>').join("")+'</div><div class="notice" style="margin-top:18px"><strong>기출 원문이 아닙니다</strong><p>공식 과목 범위에 맞춰 작성한 비공식 창작 문항입니다. 문제의 표현·난도는 실제 시험과 다를 수 있습니다.</p></div></aside></div>'}
+function topics(){return H("SUBJECT FOCUS","과목별 집중 연습","자신 없는 과목부터 10문항씩 풀고, 이후 세부 단원 문제를 골라 반복하세요.")+'<div class="grid topic-grid">'+SUBJECTS.map((name,i)=>{const qs=BANK.filter(q=>q.subject===i),topics=[...new Set(qs.map(q=>q.topic))];return '<section class="panel topicbox"><div class="row">'+tag("SUBJECT 0"+(i+1))+tag(qs.length+"문항","gray")+'</div><h3>'+h(name)+'</h3><p>'+topics.length+'개 세부 주제 · 실전 '+subParts[i]+'문항</p>'+bar(100*qs.filter(x=>historyOf(x.id)).length/qs.length)+btn("이 과목 10제 →","start-subject","small",'data-subject="'+i+'"')+'</section>'}).join("")+'</div><div class="sectiontitle"><h2>세부 단원별 연습</h2><span style="font-size:11px;color:#99a4b8">단원당 최대 10문제</span></div>'+
+SUBJECTS.map((n,i)=>'<div class="panel" style="margin:14px 0"><h3>'+h(n)+'</h3><div class="toolbar">'+[...new Set(BANK.filter(x=>x.subject===i).map(x=>x.topic))].map(t=>btn(h(t)+" →","start-topic","small",'data-subject="'+i+'" data-topic="'+h(t)+'"')).join("")+'</div></div>').join("")}
+function trap(){const trapped=trapPool(),calc=BANK.filter(q=>q.subject===1&&["SQL 결과","NULL","JOIN","GROUP BY","윈도 함수"].includes(q.topic));return H("TRICKY CONCEPTS","함정문제 · 계산 연습","자주 혼동하는 정의와 숫자 계산을 구분해 반복 연습해 보세요.")+
+'<div class="grid feature-grid"><div class="tile pink"><div class="row"><div class="tileicon">⚑</div>'+tag(trapped.length+"문항","gray")+'</div><h2>함정 개념 문제</h2><p>유의확률, 상관과 인과, 데이터 누출, 모델 해석 등에서 틀리기 쉬운 문제에 집중합니다.</p>'+btn("함정 개념 15문제 →","start-trap","primary")+'</div><div class="tile"><div class="row"><div class="tileicon">∑</div>'+tag(calc.length+"문항 풀","gray")+'</div><h2>통계 계산 15문제</h2><p>평균·z점수·분위수·정밀도·재현율·연관규칙 등 수치 계산을 반복하세요.</p>'+btn("계산형 문제 시작 →","start-calc","primary")+'</div></div>'+
+'<div class="sectiontitle"><h2>헷갈리는 핵심 개념</h2></div><div class="grid feature-grid">'+NOTES.filter(x=>x.trap).slice(8,18).map(x=>'<div class="panel"><div class="row">'+tag(SUBJECTS[x.subject],"gray")+tag(x.topic)+'</div><h3 style="margin:13px 0 7px">'+h(x.title)+'</h3><p style="font-size:12px;color:#7a88a0;margin:0">'+h(x.trap)+'</p></div>').join("")+'</div>'}
+function bankView(){let filtered=BANK.filter(q=>(bankSubject==="all"||q.subject===Number(bankSubject))&&(bankTopic==="all"||q.topic===bankTopic)&&(bankLevel==="all"||q.level===Number(bankLevel))&&[q.stem,q.topic,q.id].join(" ").toLowerCase().includes(search.toLowerCase()));const visible=filtered.slice(bankPage*25,bankPage*25+25);const topicPool=bankSubject==="all"?BANK:BANK.filter(q=>q.subject===Number(bankSubject));const topics=[...new Set(topicPool.map(x=>x.topic))];return H("QUESTION LIBRARY","전체 문제은행","모든 문항은 비공식 자체 제작 예상문제이며, 시험 기출 원문과는 다릅니다.")+
+'<section class="panel"><div class="toolbar"><input id="keyword" class="search" value="'+h(search)+'" placeholder="문제 키워드·문제 ID 검색" aria-label="문제 검색"><select class="select" id="fsub" aria-label="과목 선택"><option value="all">전체 과목</option>'+SUBJECTS.map((n,i)=>'<option value="'+i+'" '+(bankSubject===String(i)?"selected":"")+'>'+h(n)+'</option>').join("")+'</select><select class="select" id="ftopic" aria-label="주제 선택"><option value="all">전체 단원</option>'+topics.map(t=>'<option value="'+h(t)+'" '+(bankTopic===t?"selected":"")+'>'+h(t)+'</option>').join("")+'</select><select class="select" id="flevel" aria-label="난이도 선택">'+[["all","전체 난도"],["1","기초"],["2","응용"],["3","고난도"]].map(([v,n])=>'<option value="'+v+'" '+(bankLevel===v?"selected":"")+'>'+n+'</option>').join("")+'</select>'+btn("검색","apply-search")+'</div><p class="sub">'+filtered.length+'문항 검색됨 · 문제를 누르면 해당 한 문제를 연습할 수 있습니다.</p>'+
+visible.map(q=>'<div class="listrow"><div class="text"><small>'+h(q.id)+' · '+h(SUBJECTS[q.subject])+' · '+h(q.topic)+' · '+(q.level===3?"고난도":q.level===2?"응용":"기초")+'</small><b>'+h(q.stem)+'</b></div><button class="star '+(db.bookmarks.includes(q.id)?"on":"")+'" data-action="star" data-id="'+q.id+'" aria-label="북마크">★</button>'+btn("풀기","start-one","small",'data-id="'+q.id+'"')+'</div>').join("")+
+(!visible.length?'<div class="empty"><strong>검색 결과가 없습니다.</strong>필터를 바꾸어 다시 확인하세요.</div>':"")+
+(filtered.length>25?'<div class="toolbar" style="justify-content:flex-end">'+btn("이전","bank-prev","small",bankPage===0?"disabled":"")+tag((bankPage+1)+"/"+Math.ceil(filtered.length/25)+" 페이지","gray")+btn("다음","bank-next","small",25*(bankPage+1)>=filtered.length?"disabled":"")+'</div>':"")+'</section>'}
+function bank(){return bankView()}
+function collection(kind){const ids=(kind==="wrong"?Object.keys(db.mistakes):db.bookmarks).filter(id=>MAP[id]),items=ids.map(id=>MAP[id]);return H(kind==="wrong"?"ERROR REVIEW":"MY FAVORITES",kind==="wrong"?"오답노트":"북마크","다시 풀어볼 문제를 모아 두고, 설명을 확인하며 복습하세요.")+
+'<section class="panel"><div class="row" style="flex-wrap:wrap">'+tag(items.length+"문항","gray")+btn("모아풀기 →","start-collection","primary small",'data-kind="'+kind+'" '+(!items.length?"disabled":""))+'</div>'+
+(items.length?items.map(q=>'<div class="listrow"><div class="text"><small>'+h(q.id)+' · '+h(SUBJECTS[q.subject])+' · '+h(q.topic)+(kind==="wrong"?" · 오답 "+db.mistakes[q.id].count+"회":"")+'</small><b>'+h(q.stem)+'</b></div>'+btn("다시 풀기","start-one","small",'data-id="'+q.id+'"')+(kind==="bookmarks"?'<button class="star on" data-action="star" data-id="'+q.id+'">★</button>':"")+'</div>').join(""):'<div class="empty"><strong>아직 모인 문제가 없습니다.</strong>연습을 시작하면 이곳에 기록됩니다.</div>')+'</section>'}
+function notes(){const qs=NOTES.filter(n=>(noteSubject==="all"||n.subject===Number(noteSubject))&&(n.title+" "+n.topic+" "+n.items.join(" ")).toLowerCase().includes(noteSearch.toLowerCase()));return H("CONCEPT NOTEBOOK","핵심 개념노트","암기할 내용을 짧게 정리했습니다. 시험 전에 헷갈리는 개념과 주의할 설명을 확인하세요.")+
+'<div class="toolbar"><div class="segments">'+[["all","전체"],...SUBJECTS.map((x,i)=>[String(i),(i+1)+"과목"])].map(x=>'<button data-action="note-sub" data-val="'+x[0]+'" class="'+(noteSubject===x[0]?"on":"")+'">'+x[1]+'</button>').join("")+'</div><input class="search" id="note-keyword" value="'+h(noteSearch)+'" placeholder="암기할 개념 검색" aria-label="노트 검색">'+btn("검색","note-search")+'</div>'+
+'<div class="grid feature-grid">'+qs.map(x=>'<article class="concept"><div class="row">'+tag(SUBJECTS[x.subject],"gray")+tag(x.topic)+'</div><h3 style="margin-top:13px">'+h(x.title)+'</h3><ul>'+x.items.map(v=>'<li>'+h(v)+'</li>').join("")+'</ul>'+(x.code?'<pre class="sqlcode">'+h(x.code)+'</pre>':"")+(x.trap?'<div class="notice" style="margin-top:12px"><strong>함정 체크</strong><p>'+h(x.trap)+'</p></div>':"")+'</article>').join("")+'</div>'+(!qs.length?'<div class="empty">검색된 개념이 없습니다.</div>':"")}
+function formula(){const source=NOTES,f=source[flashIndex%source.length],show=flashFlip;return H("STATISTICS MEMORY","통계 공식 암기 카드","가설검정, 모델 평가, 연관규칙 계산처럼 자주 헷갈리는 공식을 카드로 반복하세요.")+
+'<div class="flashcard"><div class="row">'+tag("3과목 집중")+tag((flashIndex%source.length+1)+" / "+source.length+" 카드","gray")+'</div><div class="flashframe"><div class="eyebrow">'+h(f.topic)+'</div><div class="big">'+(show?h(f.trap||f.items.join(" · ")):h(f.title))+'</div><div class="small">'+(show?"핵심 항목과 함정까지 확인":"카드를 뒤집어 핵심 설명 확인")+'</div>'+(show?'<ul style="text-align:left;color:#687790;font-size:12px;margin:16px 0 0">'+f.items.map(x=>'<li>'+h(x)+'</li>').join("")+'</ul>'+(f.formula?'<pre class="formula" style="text-align:left;width:100%">'+h(f.formula)+'</pre>':""):"")+'</div><div class="row">'+btn("← 이전 카드","flash-prev")+btn(show?"앞면 보기":"카드 뒤집기","flash-flip","primary")+btn("다음 카드 →","flash-next")+'</div></div><div class="notice"><strong>기억할 점</strong><p>개념 암기만 끝내지 말고 문제에서 어떤 공식이 필요한지 직접 구분하는 연습도 함께 하세요. '+BANK.length+'문항 중 계산 관련 문제를 별도로 풀 수 있습니다.</p></div><div style="margin-top:14px">'+btn("계산문제 15제 풀기","start-calc","primary")+'</div>'}
+function guide(){return H("OFFICIAL FORMAT & DISCLAIMER","ADsP 시험 안내","공식 시험 정보는 한국데이터산업진흥원 데이터자격검정 공지를 기준으로 최종 확인하세요.")+
+'<div class="grid feature-grid"><section class="panel"><h3>시험 구성</h3><div class="steps">'+["데이터 모델링의 이해: 10문항","SQL 기본 및 활용: 40문항","2과목 SQL 기본 및 활용: 40문항","객관식 50문항 · 90분 · 문항당 2점","총점 60점 이상, 모든 과목 40% 이상"].map((x,i)=>'<div class="step"><b>'+(i+1)+'</b><span>'+x+'</span></div>').join("")+'</div><div class="notice" style="margin-top:15px"><strong>과락 기준</strong><p>1과목 4/10문항, 2과목 16/40문항 미만 정답이면 총점과 관계없이 불합격 기준입니다.</p></div></section><section class="panel"><h3>사용 전 확인</h3><p class="sub">문제은행은 원본 기출이 아닌 비공식 학습용 창작 문제입니다. 공식 문항 수·시험시간과 유사한 모의고사를 구성하지만 실제 시험 난이도와 지문이 일치한다는 의미는 아닙니다.</p><p class="sub">시험 일정, 접수 기간, 필기 방식, 유의사항은 시행기관 공식 공고를 확인하세요.</p><p><a href="https://www.dataq.or.kr/" rel="noopener noreferrer" target="_blank">데이터자격검정 공식 홈페이지 ↗</a></p><div class="notice"><strong>학생 기록</strong><p>서로 다른 기기·브라우저의 기록은 분리됩니다. 같은 PC의 같은 브라우저 프로필을 공유하면 이전 이용자 기록이 표시될 수 있습니다. 중요한 기록은 JSON으로 백업하세요.</p></div></section></div>'}
+function history(){const list=db.history.slice().reverse().filter(r=>historyMode==="all"||r.kind===historyMode);return H("STUDY HISTORY","학습 기록","모의고사 점수·과목별 과락 여부·오답을 확인하세요. 브라우저 기록은 백업할 수 있습니다.")+
+'<div class="grid stats">'+stat("전체 학습 횟수",db.history.length,"회")+stat("최고 정답률",db.history.length?Math.max(...db.history.map(r=>r.rate)):0,"%")+stat("누적 풀이 문항",db.history.reduce((a,r)=>a+r.entries.length,0),"문항")+stat("오답노트",Object.keys(db.mistakes).length,"문항")+'</div><div class="panel"><div class="toolbar"><div class="segments">'+[["all","전체"],["full","실전 50제"],["quick","빠른 연습"],["subject","과목별"],["single","한 문제"]].map(x=>'<button data-action="history-mode" data-mode="'+x[0]+'" class="'+(historyMode===x[0]?"on":"")+'">'+x[1]+'</button>').join("")+'</div></div>'+
+(list.length?'<div style="overflow:auto"><table class="historytable"><thead><tr><th>날짜</th><th>유형</th><th>정답</th><th>정답률</th><th>합격 기준</th><th>상세</th></tr></thead><tbody>'+list.map(r=>'<tr><td>'+new Date(r.ts).toLocaleString("ko-KR",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"})+'</td><td>'+h(r.label)+'</td><td>'+r.correct+'/'+r.entries.length+'</td><td><strong>'+r.rate+'%</strong></td><td>'+tag(r.pass===null?"연습":r.pass?"충족":"미달",r.pass===null?"gray":r.pass?"good":"bad")+'</td><td>'+btn("상세","show-result","small",'data-id="'+r.id+'"')+'</td></tr>').join("")+'</tbody></table></div>':'<div class="empty"><strong>학습 기록이 없습니다.</strong>모의고사를 시작해 보세요.</div>')+
+'<div class="toolbar" style="margin-top:18px">'+btn("학습 기록 JSON 저장","export")+btn("전체 기록 초기화","reset","warn")+'</div></div>'}
+function start(kind,subject,id,topic){if(db.session&&!confirm("진행 중인 연습이 있습니다. 새 연습을 시작하면 미제출 답안이 삭제됩니다. 계속할까요?"))return;let selected=[],duration=0,label="",pool=[];
+if(kind==="full"){for(let i=0;i<2;i++)selected.push(...fresh(BANK.filter(x=>x.subject===i),subParts[i]));duration=90*60000;label="실전 50문항"}
+else if(kind==="quick"){selected=fresh(BANK,20);duration=25*60000;label="빠른 20문제"}
+else if(kind==="subject"){pool=BANK.filter(x=>x.subject===Number(subject)&&(!topic||x.topic===topic));selected=fresh(pool,10);duration=15*60000;label=topic?SUBJECTS[Number(subject)]+" · "+topic:SUBJECTS[Number(subject)]+" 10문제"}
+else if(kind==="trap"){selected=fresh(trapPool(),15);duration=25*60000;label="함정문제 15제"}
+else if(kind==="calc"){selected=fresh(BANK.filter(x=>x.subject===1&&["SQL 결과","NULL","JOIN","GROUP BY","윈도 함수"].includes(x.topic)),15);duration=25*60000;label="SQL 결과 예측 15제"}
+else if(kind==="single"){selected=id&&MAP[id]?[MAP[id]]:[];label="한 문제 풀기"}
+else if(kind==="wrong"||kind==="bookmarks"){const ids=kind==="wrong"?Object.keys(db.mistakes):db.bookmarks;selected=fresh(ids.map(x=>MAP[x]).filter(Boolean),20);label=kind==="wrong"?"오답 모아풀기":"북마크 모아풀기";duration=35*60000}
+if(!selected.length){toast("연습할 문항이 없습니다.");return}
+selected=kind==="full"?selected:shuffle(selected);
+db.session={kind,label,ids:selected.map(x=>x.id),answers:{},idx:0,started:Date.now(),limit:duration,seed:Math.floor(Math.random()*0xffffffff)};save();route("quiz")}
+function remains(){const s=db.session;if(!s)return 0;return Math.max(0,Math.ceil((s.limit-(Date.now()-s.started))/1000))}
+function asClock(seconds){return String(Math.floor(seconds/3600)).padStart(2,"0")+":"+String(Math.floor(seconds%3600/60)).padStart(2,"0")+":"+String(seconds%60).padStart(2,"0")}
+function timer(){clearInterval(interval);const s=db.session;if(!s||!s.limit)return;const tick=()=>{if(page!=="quiz"||!db.session){clearInterval(interval);return}const t=el("clock");if(t)t.textContent=asClock(remains());if(remains()<=0){clearInterval(interval);finish(true)}};tick();interval=setInterval(tick,1000)}
+function quiz(){const s=db.session;if(!s)return H("PRACTICE","진행 중인 연습이 없습니다","대시보드에서 문제를 선택하세요.")+btn("대시보드","nav","primary",'data-page="home"');const q=MAP[s.ids[s.idx]],current=s.answers[q.id],done=s.ids.filter(id=>answered(s,id)).length,order=orderFor(q,s.seed);
+return H("EXAM IN PROGRESS",s.label,"정답은 최종 제출한 뒤 확인할 수 있습니다. 선택한 답안은 브라우저에 자동 저장됩니다.")+
+'<div class="exam-layout"><section class="exam-panel"><div class="row">'+tag(SUBJECTS[q.subject])+btn(db.bookmarks.includes(q.id)?"★ 저장됨":"☆ 저장","star","small",'data-id="'+q.id+'"')+'</div>'+bar(done/s.ids.length*100)+
+'<div class="exam-kicker">QUESTION '+String(s.idx+1).padStart(2,"0")+' / '+s.ids.length+' · '+h(q.topic)+'</div><div class="question">'+h(q.stem)+'</div>'+
+order.map((oi,i)=>'<button class="option '+(current===oi?"selected":"")+'" data-action="answer" data-val="'+oi+'"><span class="circle">'+(i+1)+'</span><span>'+h(q.options[oi])+'</span></button>').join("")+
+'<div class="quizactions"><div style="display:flex;gap:8px">'+btn("← 이전","quiz-prev","",s.idx===0?"disabled":"")+btn("다음 →","quiz-next","",s.idx===s.ids.length-1?"disabled":"")+'</div>'+btn("최종 제출","submit","primary")+'</div></section><aside><section class="panel"><div style="color:#9eacc0;font-size:11px;font-weight:850">남은 시간</div><div class="clock" id="clock">'+(s.limit?asClock(remains()):"제한 없음")+'</div><div class="row" style="margin-top:21px"><b style="font-size:12px">풀이 현황</b><span style="font-size:11px;color:#94a0b6">'+done+'/'+s.ids.length+' 응답</span></div>'+bar(done/s.ids.length*100)+
+'<div class="numbers" style="margin-top:16px">'+s.ids.map((id,i)=>'<button class="num '+(i===s.idx?"current":answered(s,id)?"done":"")+'" data-action="jump" data-i="'+i+'" title="'+(i+1)+'번 문제">'+(i+1)+'</button>').join("")+'</div><div class="notice" style="margin-top:17px"><strong>풀이 자동 저장</strong><p>창을 닫더라도 동일한 브라우저에서 이어 풀 수 있습니다. 모의고사 제한시간은 종료되지 않은 동안 계속 흐릅니다.</p></div>'+btn("연습 중단","stop","warn full",'style="margin-top:14px"')+'</section></aside></div>'}
+function finish(auto){const s=db.session;if(!s)return;const blanks=s.ids.filter(id=>!answered(s,id)).length;if(!auto&&blanks&&!confirm(blanks+"문항에 답하지 않았습니다. 제출하시겠습니까?"))return;if(!auto&&!confirm("제출 후 정답과 해설을 확인할까요?"))return;
+const entries=s.ids.map(id=>{const q=MAP[id],ans=s.answers[id];return{id,ans:ans===undefined?null:ans,ok:ans===q.answer}});
+const bySubject=SUBJECTS.map((n,i)=>{const x=entries.filter(e=>MAP[e.id].subject===i);let correct=score(x);return{name:n,total:x.length,correct,rate:x.length?Math.round(correct/x.length*100):0}});
+const correct=score(entries),rate=Math.round(100*correct/entries.length),pass=s.kind==="full"?(rate>=60&&bySubject.every((x,i)=>x.correct>=(i===0?4:16))):null;
+const rec={id:"A"+Date.now(),ts:Date.now(),kind:s.kind,label:s.label,entries,bySubject,correct,rate,pass,limit:s.limit,spent:Date.now()-s.started};
+for(const e of entries)if(!e.ok){db.mistakes[e.id]=db.mistakes[e.id]||{count:0};db.mistakes[e.id].count++}
+db.history.push(rec);db.last=rec.id;db.session=null;save();route("result");if(auto)toast("제한시간이 끝나 자동으로 제출했습니다.")}
+function result(){const r=db.history.find(x=>x.id===db.last);if(!r)return H("RESULT","성적표를 찾을 수 없습니다","학습 기록에서 다시 선택하세요.");
+return H("RESULT ANALYSIS",r.label+" · 성적 분석","정답과 상세 해설을 확인하고 과락이 발생한 과목을 먼저 보완하세요.")+
+'<div class="grid two"><section class="panel" style="text-align:center"><div class="score-circle" style="--pct:'+r.rate+'%"><span>'+r.rate+'<span style="font-size:12px;padding-left:2px">점</span></span></div><h2>'+ (r.pass===null?"연습 완료":r.pass?"합격 기준 충족!":"합격 기준 미달")+'</h2><p class="sub" style="margin-bottom:10px">'+r.correct+' / '+r.entries.length+'문항 정답 · '+(r.pass===null?"연습 점수":r.pass?"전체 및 과목별 기준 충족":"과락·전체 점수 재확인")+'</p><div class="toolbar" style="justify-content:center">'+btn("오답노트","nav","",'data-page="wrong"')+btn("다시 연습","nav","primary",'data-page="exam"')+'</div></section>'+
+'<section class="panel"><h3>과목별 점수</h3>'+r.bySubject.map((s,i)=>s.total?'<div class="subjectline"><div class="row"><span>'+h(s.name)+' · '+s.correct+'/'+s.total+'</span>'+tag(s.rate+"%",r.kind==="full"?(s.rate>=40?"good":"bad"):"gray")+'</div>'+bar(s.rate)+'</div>':"").join("")+'<div class="notice"><strong>합격 기준</strong><p>실전 모의고사는 60점 이상이면서 각 과목 정답률 40% 이상이어야 합니다. 기타 연습 모드에는 합격/불합격을 적용하지 않습니다.</p></div></section></div>'+
+'<div class="sectiontitle"><h2>문항별 해설</h2>'+tag(r.entries.length+"문항","gray")+'</div>'+
+r.entries.map((entry,i)=>{const q=MAP[entry.id],own=entry.ans===null?"미응답":q.options[entry.ans];return '<section class="review"><div class="row">'+tag("Q"+(i+1)+" · "+SUBJECTS[q.subject],"gray")+tag(entry.ok?"정답":"오답",entry.ok?"good":"bad")+'</div><h3 class="review-q">'+h(q.stem)+'</h3><p class="review-ans">내 답안: <b>'+h(own)+'</b></p><p class="review-ans">정답: <b style="color:#5d4eb6">'+h(q.options[q.answer])+'</b></p><div class="explain">💡 '+h(q.why)+'</div><div style="margin-top:13px">'+btn(db.bookmarks.includes(q.id)?"★ 북마크됨":"☆ 북마크","star","small",'data-id="'+q.id+'"')+'</div></section>'}).join("")}
+function exportData(){const body=JSON.stringify({exportedAt:new Date().toISOString(),history:db.history,mistakes:db.mistakes,bookmarks:db.bookmarks},null,2);const blob=new Blob([body],{type:"application/json;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="adsp-study-history.json";document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1200);toast("학습 기록이 저장됐습니다.")}
+document.addEventListener("click",event=>{const target=event.target.closest("[data-action]");if(!target||target.disabled)return;const a=target.dataset.action,s=db.session;switch(a){
+case"nav":route(target.dataset.page);break;
+case"menu":mobile=!mobile;render();break;
+case"close-menu":mobile=false;render();break;
+case"start-full":start("full");break;
+case"setup-mode":setupMode=target.dataset.mode;render();break;
+case"start-setup":start(setupMode,setupMode==="subject"?(el("subject-sel")?.value||setupSubject):undefined);break;
+case"start-subject":start("subject",target.dataset.subject);break;
+case"start-topic":start("subject",target.dataset.subject,null,target.dataset.topic);break;
+case"start-trap":start("trap");break;
+case"start-calc":start("calc");break;
+case"start-one":start("single",null,target.dataset.id);break;
+case"start-collection":start(target.dataset.kind);break;
+case"answer":if(!s)return;s.answers[s.ids[s.idx]]=Number(target.dataset.val);save();render();break;
+case"jump":if(s){s.idx=Number(target.dataset.i);save();render()}break;
+case"quiz-next":if(s&&s.idx<s.ids.length-1){s.idx++;save();render()}break;
+case"quiz-prev":if(s&&s.idx>0){s.idx--;save();render()}break;
+case"submit":finish(false);break;
+case"stop":if(s&&confirm("연습을 중단하고 미제출 답안을 삭제할까요?")){db.session=null;save();route("home")}break;
+case"star":{const id=target.dataset.id;db.bookmarks=db.bookmarks.includes(id)?db.bookmarks.filter(x=>x!==id):db.bookmarks.concat(id);save();render();break}
+case"apply-search":{search=el("keyword").value;bankSubject=el("fsub").value;bankTopic=el("ftopic").value;bankLevel=el("flevel").value;bankPage=0;render();break}
+case"bank-next":bankPage++;render();break;
+case"bank-prev":bankPage=Math.max(0,bankPage-1);render();break;
+case"note-sub":noteSubject=target.dataset.val;render();break;
+case"note-search":noteSearch=el("note-keyword").value;render();break;
+case"flash-prev":flashIndex=(flashIndex+NOTES.length-1)%NOTES.length;flashFlip=false;render();break;
+case"flash-next":flashIndex++;flashFlip=false;render();break;
+case"flash-flip":flashFlip=!flashFlip;render();break;
+case"history-mode":historyMode=target.dataset.mode;render();break;
+case"show-result":db.last=target.dataset.id;save();route("result");break;
+case"export":exportData();break;
+case"reset":if(confirm("모든 학습 기록, 오답노트, 북마크를 초기화할까요? 복구할 수 없습니다.")){db=EMPTY();save();route("home")}break;
+}});
+document.addEventListener("change",event=>{if(event.target.id==="subject-sel")setupSubject=event.target.value;if(event.target.id==="fsub"){bankSubject=event.target.value;bankTopic="all";bankPage=0;render()}});
+document.addEventListener("keydown",event=>{if(event.key==="Enter"&&event.target.id==="keyword"){search=event.target.value;bankSubject=el("fsub").value;bankTopic=el("ftopic").value;bankLevel=el("flevel").value;bankPage=0;render()}if(event.key==="Enter"&&event.target.id==="note-keyword"){noteSearch=event.target.value;render()}if(page==="quiz"&&db.session&&["1","2","3","4"].includes(event.key)&&!["INPUT","TEXTAREA","SELECT"].includes(document.activeElement.tagName)){const s=db.session,q=MAP[s.ids[s.idx]],order=orderFor(q,s.seed);s.answers[q.id]=order[Number(event.key)-1];save();render()}});
+window.addEventListener("beforeunload",save);
+render();
+})();
